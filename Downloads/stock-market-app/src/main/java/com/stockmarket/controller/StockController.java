@@ -18,6 +18,12 @@ public class StockController {
     @Value("${stock.api.url:https://stock.indianapi.in/trending}")
     private String stockApiUrl;
     
+    @Value("${stock.api.nse.url:https://stock.indianapi.in/NSE_most_active}")
+    private String nseApiUrl;
+    
+    @Value("${stock.api.bse.url:https://stock.indianapi.in/BSE_most_active}")
+    private String bseApiUrl;
+    
     @Value("${stock.api.key:sk-live-TMbB4OWlD0trKuuCIymohljapSXexU2R5Hx3aP4v}")
     private String apiKey;
     
@@ -28,43 +34,99 @@ public class StockController {
     @GetMapping("/trending")
     public ResponseEntity<?> getTrendingStocks() {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Api-Key", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            
+            HttpHeaders headers = createHeaders();
             HttpEntity<String> entity = new HttpEntity<>(headers);
             
             ResponseEntity<Map> response = restTemplate.exchange(
-                stockApiUrl,
-                HttpMethod.GET,
-                entity,
-                Map.class
+                stockApiUrl, HttpMethod.GET, entity, Map.class
             );
-            
             return ResponseEntity.ok(response.getBody());
-            
         } catch (Exception e) {
-            System.err.println("Error fetching stock data: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> fallbackResponse = getMockStockData();
-            return ResponseEntity.ok(fallbackResponse);
+            System.err.println("Error fetching trending stocks: " + e.getMessage());
+            return ResponseEntity.ok(getMockStockData());
         }
     }
     
-    @GetMapping("/{tickerId}")
-    public ResponseEntity<?> getStockByTicker(@PathVariable String tickerId) {
+    @GetMapping("/nse-active")
+    public ResponseEntity<?> getNSEMostActive() {
         try {
-            Map<String, Object> stockData = new HashMap<>();
-            stockData.put("ticker_id", tickerId);
-            stockData.put("price", 2500.50);
-            stockData.put("company_name", "Company Name");
-            return ResponseEntity.ok(stockData);
+            HttpHeaders headers = createHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(
+                nseApiUrl, HttpMethod.GET, entity, Map.class
+            );
+            return ResponseEntity.ok(response.getBody());
         } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Stock not found");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            System.err.println("Error fetching NSE data: " + e.getMessage());
+            return ResponseEntity.ok(getMockNSEData());
         }
+    }
+    
+    @GetMapping("/bse-active")
+    public ResponseEntity<?> getBSEMostActive() {
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(
+                bseApiUrl, HttpMethod.GET, entity, Map.class
+            );
+            return ResponseEntity.ok(response.getBody());
+        } catch (Exception e) {
+            System.err.println("Error fetching BSE data: " + e.getMessage());
+            return ResponseEntity.ok(getMockBSEData());
+        }
+    }
+    
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Api-Key", apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+    
+    private Map<String, Object> getMockNSEData() {
+        Map<String, Object> response = new HashMap<>();
+        Object[] mostActive = new Object[] {
+            createStockPrice("ETEA.NS", 451.95),
+            createStockPrice("ONGC.NS", 285.40),
+            createStockPrice("BAJE.NS", 289.75),
+            createStockPrice("HZNC.NS", 512.30),
+            createStockPrice("HDBK.NS", 1725.80),
+            createStockPrice("TISC.NS", 158.65),
+            createStockPrice("ITC.NS", 465.20),
+            createStockPrice("VDAN.NS", 451.90),
+            createStockPrice("CNBK.NS", 105.45),
+            createStockPrice("INID.NS", 125.80)
+        };
+        response.put("most_active", mostActive);
+        return response;
+    }
+    
+    private Map<String, Object> getMockBSEData() {
+        Map<String, Object> response = new HashMap<>();
+        Object[] mostActive = new Object[] {
+            createStockPrice("SUZL.BO", 65.25),
+            createStockPrice("YESB.BO", 22.40),
+            createStockPrice("ONGC.BO", 285.40),
+            createStockPrice("BAJE.BO", 289.75),
+            createStockPrice("ETEA.BO", 451.95),
+            createStockPrice("KTKM.BO", 1845.60),
+            createStockPrice("TISC.BO", 158.65),
+            createStockPrice("CNBK.BO", 105.45),
+            createStockPrice("BJFS.BO", 1685.30),
+            createStockPrice("VDAN.BO", 451.90)
+        };
+        response.put("most_active", mostActive);
+        return response;
+    }
+    
+    private Map<String, Object> createStockPrice(String tickerId, double price) {
+        Map<String, Object> stock = new HashMap<>();
+        stock.put("ticker_id", tickerId);
+        stock.put("price", price);
+        return stock;
     }
     
     private Map<String, Object> getMockStockData() {
@@ -72,56 +134,23 @@ public class StockController {
         Map<String, Object> trendingStocks = new HashMap<>();
         
         Object[] topGainers = new Object[] {
-            createStock("RELIANCE", "Reliance Industries Ltd", 2500.50, 2480.00, 2530.00, 2470.00, 2500.00, 2700.00, 2200.00, 1500000, "2024-02-03", "15:30:00"),
-            createStock("TCS", "Tata Consultancy Services", 3500.75, 3480.00, 3550.00, 3470.00, 3500.00, 3800.00, 3200.00, 800000, "2024-02-03", "15:30:00"),
-            createStock("INFY", "Infosys Limited", 1450.25, 1440.00, 1480.00, 1435.00, 1450.00, 1600.00, 1300.00, 1200000, "2024-02-03", "15:30:00"),
-            createStock("HDFC", "HDFC Bank", 1600.00, 1590.00, 1620.00, 1585.00, 1600.00, 1750.00, 1400.00, 2000000, "2024-02-03", "15:30:00"),
-            createStock("ICICI", "ICICI Bank", 950.50, 945.00, 960.00, 940.00, 950.00, 1050.00, 850.00, 1800000, "2024-02-03", "15:30:00"),
-            createStock("WIPRO", "Wipro Limited", 420.75, 418.00, 425.00, 415.00, 420.00, 480.00, 380.00, 900000, "2024-02-03", "15:30:00"),
-            createStock("BHARTI", "Bharti Airtel", 850.25, 845.00, 860.00, 840.00, 850.00, 920.00, 750.00, 1100000, "2024-02-03", "15:30:00"),
-            createStock("ITC", "ITC Limited", 425.50, 423.00, 430.00, 420.00, 425.00, 470.00, 380.00, 1600000, "2024-02-03", "15:30:00")
-        };
-        
-        Object[] topLosers = new Object[] {
-            createStock("TATAMOTORS", "Tata Motors", 650.75, 655.00, 660.00, 645.00, 650.00, 720.00, 580.00, 1300000, "2024-02-03", "15:30:00"),
-            createStock("ADANI", "Adani Enterprises", 2300.50, 2320.00, 2340.00, 2290.00, 2300.00, 2500.00, 2000.00, 700000, "2024-02-03", "15:30:00"),
-            createStock("BAJAJ", "Bajaj Finance", 7200.25, 7250.00, 7300.00, 7180.00, 7200.00, 7800.00, 6500.00, 400000, "2024-02-03", "15:30:00"),
-            createStock("MARUTI", "Maruti Suzuki", 9500.00, 9550.00, 9600.00, 9480.00, 9500.00, 10200.00, 8800.00, 300000, "2024-02-03", "15:30:00")
+            createStock("RELIANCE", "Reliance Industries Ltd", 2500.50, 1500000),
+            createStock("TCS", "Tata Consultancy Services", 3500.75, 800000),
+            createStock("INFY", "Infosys Limited", 1450.25, 1200000)
         };
         
         trendingStocks.put("top_gainers", topGainers);
-        trendingStocks.put("top_losers", topLosers);
+        trendingStocks.put("top_losers", new Object[]{});
         response.put("trending_stocks", trendingStocks);
-        
         return response;
     }
     
-    private Map<String, Object> createStock(String tickerId, String companyName, double price, 
-                                           double open, double high, double low, double close,
-                                           double yearHigh, double yearLow, int volume,
-                                           String date, String time) {
+    private Map<String, Object> createStock(String tickerId, String companyName, double price, int volume) {
         Map<String, Object> stock = new HashMap<>();
         stock.put("ticker_id", tickerId);
         stock.put("company_name", companyName);
         stock.put("price", price);
-        stock.put("open", open);
-        stock.put("high", high);
-        stock.put("low", low);
-        stock.put("close", close);
-        stock.put("year_high", yearHigh);
-        stock.put("year_low", yearLow);
         stock.put("volume", volume);
-        stock.put("date", date);
-        stock.put("time", time);
-        stock.put("net_change", price - close);
-        stock.put("percent_change", ((price - close) / close) * 100);
-        stock.put("lot_size", 1);
-        stock.put("bid", price - 0.25);
-        stock.put("ask", price + 0.25);
-        stock.put("overall_rating", "Bullish");
-        stock.put("short_term_trends", "Bullish");
-        stock.put("long_term_trends", "Bullish");
-        
         return stock;
     }
 }
