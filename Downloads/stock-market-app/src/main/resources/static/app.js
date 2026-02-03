@@ -442,38 +442,196 @@ async function loadTradeHistory() {
             return;
         }
 
-        const historyHTML = trades.map(trade => `
-            <div class="stock-card">
-                <div class="stock-symbol">${trade.tickerId}</div>
-                <div class="stock-name">${trade.companyName || 'Unknown'}</div>
-                <div class="stock-price" style="font-size: 1.2em; color: ${trade.tradeType === 'BUY' ? '#2ecc71' : '#e74c3c'}">
-                    ${trade.tradeType}
-                </div>
-                <div class="stock-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Quantity:</span>
-                        <span class="detail-value">${trade.quantity}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Price:</span>
-                        <span class="detail-value">₹${trade.price.toFixed(2)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Total:</span>
-                        <span class="detail-value">₹${trade.totalAmount.toFixed(2)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Date:</span>
-                        <span class="detail-value">${new Date(trade.timestamp).toLocaleDateString()}</span>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+        // Sort trades by timestamp (newest first)
+        const sortedTrades = trades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        container.innerHTML = `<div class="stocks-grid">${historyHTML}</div>`;
+        const tableRows = sortedTrades.map(trade => {
+            const tradeDate = new Date(trade.timestamp);
+            const dateStr = tradeDate.toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const timeStr = tradeDate.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            return `
+                <tr>
+                    <td class="date-cell">${dateStr}<br><small>${timeStr}</small></td>
+                    <td><strong>${trade.tickerId}</strong><br><small>${trade.companyName || 'N/A'}</small></td>
+                    <td><span class="type-badge badge-${trade.tradeType.toLowerCase()}">${trade.tradeType}</span></td>
+                    <td style="text-align: right;">${trade.quantity}</td>
+                    <td style="text-align: right;">₹${trade.price.toFixed(2)}</td>
+                    <td style="text-align: right;"><strong>₹${trade.totalAmount.toFixed(2)}</strong></td>
+                </tr>
+            `;
+        }).join('');
+
+        const historyHTML = `
+            <div class="history-table-container">
+                <table class="trade-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Stock</th>
+                            <th>Type</th>
+                            <th style="text-align: right;">Quantity</th>
+                            <th style="text-align: right;">Price</th>
+                            <th style="text-align: right;">Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = historyHTML;
     } catch (error) {
         console.error('Error:', error);
         container.innerHTML = '<div class="error">Failed to load trade history</div>';
+    }
+}
+
+async function exportTradesToPDF() {
+    try {
+        // Fetch trade data
+        const response = await fetch(`${BACKEND_API}/trades`);
+        if (!response.ok) throw new Error('Failed to load trades');
+        const trades = await response.json();
+
+        if (!trades || trades.length === 0) {
+            showToast('error', 'No trades to export');
+            return;
+        }
+
+        // Sort trades by timestamp (newest first)
+        const sortedTrades = trades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Add title
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Trade History Report', 14, 22);
+
+        // Add generation date
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated on: ${new Date().toLocaleString('en-IN')}`, 14, 30);
+
+        // Calculate summary statistics
+        const totalBuys = sortedTrades.filter(t => t.tradeType === 'BUY').length;
+        const totalSells = sortedTrades.filter(t => t.tradeType === 'SELL').length;
+        const totalBuyAmount = sortedTrades
+            .filter(t => t.tradeType === 'BUY')
+            .reduce((sum, t) => sum + t.totalAmount, 0);
+        const totalSellAmount = sortedTrades
+            .filter(t => t.tradeType === 'SELL')
+            .reduce((sum, t) => sum + t.totalAmount, 0);
+
+        // Add summary section
+        doc.setFontSize(12);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Summary:', 14, 40);
+
+        doc.setFontSize(10);
+        doc.text(`Total Trades: ${sortedTrades.length}`, 14, 47);
+        doc.text(`Buy Orders: ${totalBuys}`, 14, 53);
+        doc.text(`Sell Orders: ${totalSells}`, 14, 59);
+        doc.text(`Total Buy Amount: Rs. ${totalBuyAmount.toFixed(2)}`, 14, 65);
+        doc.text(`Total Sell Amount: Rs. ${totalSellAmount.toFixed(2)}`, 14, 71);
+
+        // Prepare table data
+        const tableData = sortedTrades.map(trade => {
+            const tradeDate = new Date(trade.timestamp);
+            const dateStr = tradeDate.toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const timeStr = tradeDate.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            return [
+                `${dateStr}\n${timeStr}`,
+                `${trade.tickerId}\n${trade.companyName || 'N/A'}`,
+                trade.tradeType,
+                trade.quantity.toString(),
+                `Rs. ${trade.price.toFixed(2)}`,
+                `Rs. ${trade.totalAmount.toFixed(2)}`
+            ];
+        });
+
+        // Add table using autoTable plugin
+        doc.autoTable({
+            startY: 80,
+            head: [['Date & Time', 'Stock', 'Type', 'Quantity', 'Price', 'Total Amount']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [45, 52, 71],
+                textColor: [255, 255, 255],
+                fontSize: 10,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            bodyStyles: {
+                fontSize: 9,
+                cellPadding: 5
+            },
+            columnStyles: {
+                0: { cellWidth: 35 },
+                1: { cellWidth: 55 },
+                2: { cellWidth: 20, halign: 'center' },
+                3: { cellWidth: 25, halign: 'right' },
+                4: { cellWidth: 25, halign: 'right' },
+                5: { cellWidth: 30, halign: 'right' }
+            },
+            didParseCell: function(data) {
+                // Color code BUY and SELL
+                if (data.column.index === 2 && data.cell.section === 'body') {
+                    if (data.cell.raw === 'BUY') {
+                        data.cell.styles.textColor = [46, 204, 113];
+                        data.cell.styles.fontStyle = 'bold';
+                    } else if (data.cell.raw === 'SELL') {
+                        data.cell.styles.textColor = [231, 76, 60];
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                }
+            },
+            margin: { top: 80 }
+        });
+
+        // Add footer with page numbers
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text(
+                `Page ${i} of ${pageCount}`,
+                doc.internal.pageSize.getWidth() / 2,
+                doc.internal.pageSize.getHeight() - 10,
+                { align: 'center' }
+            );
+        }
+
+        // Save the PDF
+        const filename = `Trade_History_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(filename);
+
+        showToast('success', 'PDF exported successfully');
+    } catch (error) {
+        console.error('Error exporting PDF:', error);
+        showToast('error', 'Failed to export PDF');
     }
 }
 

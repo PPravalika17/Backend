@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Market Trading Platform</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -485,152 +487,237 @@
                 right: 20px;
             }
         }
+        /* Table Styling for History Tab */
+.history-table-container {
+    padding: 30px;
+    overflow-x: auto;
+}
+
+.trade-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #252a3d;
+    border-radius: 12px;
+    overflow: hidden;
+    color: #e0e0e0;
+}
+
+.trade-table th {
+    background: #2d3447;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #8a92a6;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    letter-spacing: 1px;
+}
+
+.trade-table td {
+    padding: 15px;
+    border-bottom: 1px solid #2d3447;
+}
+
+.trade-table tr:last-child td {
+    border-bottom: none;
+}
+
+.trade-table tr:hover {
+    background: rgba(92, 184, 92, 0.05);
+}
+
+.type-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.badge-buy { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+.badge-sell { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+
+.date-cell { color: #8a92a6; font-size: 0.9em; }
+
+.export-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px 30px;
+    background: #1a1d2e;
+    border-bottom: 2px solid #2d3447;
+}
+
+.export-btn {
+    padding: 12px 25px;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.export-btn:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📈 Stock Market Trading Platform</h1>
-            <p>Trade stocks and manage your portfolio</p>
-        </div>
-        <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('stocks')">Trending Stocks</button>
-            <button class="nav-tab" onclick="switchTab('portfolio')">My Portfolio</button>
-            <button class="nav-tab" onclick="switchTab('history')">Trade History</button>
-        </div>
-        
-        <div id="stocksTab" class="tab-content active">
-            <div class="search-container">
-                <div class="search-box">
-                    <input type="text" class="search-input" id="searchInput" placeholder="Search stocks...">
-                    <button class="search-btn" onclick="searchStocks()">Search</button>
-                </div>
-            </div>
-            <div id="stocksContainer"><div class="loading">Loading stocks...</div></div>
-        </div>
-        
-        <div id="portfolioTab" class="tab-content">
-            <div id="portfolioContainer"><div class="loading">Loading portfolio...</div></div>
-        </div>
-        
-        <div id="historyTab" class="tab-content">
-            <div id="historyContainer"><div class="loading">Loading trade history...</div></div>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>📈 Stock Market Trading Platform</h1>
+        <p>Trade stocks and manage your portfolio</p>
+    </div>
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab('stocks')">Trending Stocks</button>
+        <button class="nav-tab" onclick="switchTab('portfolio')">My Portfolio</button>
+        <button class="nav-tab" onclick="switchTab('history')">Trade History</button>
     </div>
 
-    <button class="add-holding-btn" id="addHoldingBtn" onclick="openAddHoldingModal()" title="Add Holding">+</button>
-
-    <div id="addHoldingModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">Add New Holding</div>
-                <button class="close-btn" onclick="closeAddHoldingModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="exchange-tabs">
-                    <div class="exchange-tab active" onclick="selectExchange('NSE')" id="nseTab">NSE</div>
-                    <div class="exchange-tab" onclick="selectExchange('BSE')" id="bseTab">BSE</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Select Stock</label>
-                    <select class="form-select" id="stockSelect">
-                        <option value="">Choose a stock...</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Purchase Price (₹)</label>
-                    <input type="number" class="form-input" id="purchasePrice" placeholder="Enter price" step="0.01" min="0">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" class="form-input" id="quantity" placeholder="Enter quantity" min="1">
-                </div>
-                
-                <button class="submit-btn" onclick="addHolding()">Add to Portfolio</button>
+    <div id="stocksTab" class="tab-content active">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search stocks...">
+                <button class="search-btn" onclick="searchStocks()">Search</button>
             </div>
         </div>
+        <div id="stocksContainer"><div class="loading">Loading stocks...</div></div>
     </div>
 
-    <div id="removeHoldingModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">Remove Holding</div>
-                <button class="close-btn" onclick="closeRemoveHoldingModal()">&times;</button>
+    <div id="portfolioTab" class="tab-content">
+        <div id="portfolioContainer"><div class="loading">Loading portfolio...</div></div>
+    </div>
+
+    <div id="historyTab" class="tab-content">
+        <div class="export-header">
+            <button class="export-btn" onclick="exportTradesToPDF()">
+                <span>📄</span>
+                <span>Export to PDF</span>
+            </button>
+        </div>
+        <div id="historyContainer"><div class="loading">Loading trade history...</div></div>
+    </div>
+</div>
+
+<button class="add-holding-btn" id="addHoldingBtn" onclick="openAddHoldingModal()" title="Add Holding">+</button>
+
+<div id="addHoldingModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Add New Holding</div>
+            <button class="close-btn" onclick="closeAddHoldingModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="exchange-tabs">
+                <div class="exchange-tab active" onclick="selectExchange('NSE')" id="nseTab">NSE</div>
+                <div class="exchange-tab" onclick="selectExchange('BSE')" id="bseTab">BSE</div>
             </div>
-            <div class="modal-body">
-                <div class="info-box">
-                    <div class="info-row">
-                        <span class="info-label">Stock:</span>
-                        <span class="info-value" id="removeStockSymbol">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Company:</span>
-                        <span class="info-value" id="removeCompanyName">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Holdings:</span>
-                        <span class="info-value" id="removeCurrentQty">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Avg Purchase Price:</span>
-                        <span class="info-value" id="removeAvgPrice">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Current Price:</span>
-                        <span class="info-value" id="removeCurrentPrice">-</span>
-                    </div>
-                </div>
 
-                <div class="quick-actions">
-                    <button class="quick-btn" onclick="setRemoveQuantity(0.25)">25%</button>
-                    <button class="quick-btn" onclick="setRemoveQuantity(0.5)">50%</button>
-                    <button class="quick-btn" onclick="setRemoveQuantity(0.75)">75%</button>
-                    <button class="quick-btn" onclick="setRemoveQuantity(1)">All</button>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Quantity to Remove</label>
-                    <div class="quantity-selector">
-                        <div class="quantity-controls">
-                            <button class="quantity-btn" onclick="decreaseRemoveQty()">−</button>
-                            <input type="number" class="quantity-input" id="removeQuantity" value="1" min="1" oninput="updateRemoveSummary()">
-                            <button class="quantity-btn" onclick="increaseRemoveQty()">+</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-box warning">
-                    <div class="info-row">
-                        <span class="info-label">Removing:</span>
-                        <span class="info-value" id="removingQty">1 shares</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Value at Current Price:</span>
-                        <span class="info-value" id="removeValue">₹0.00</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Profit/Loss:</span>
-                        <span class="info-value" id="removePL">₹0.00</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Remaining:</span>
-                        <span class="info-value" id="remainingQty">- shares</span>
-                    </div>
-                </div>
-
-                <button class="submit-btn danger" onclick="executeRemove()">Remove from Portfolio</button>
+            <div class="form-group">
+                <label class="form-label">Select Stock</label>
+                <select class="form-select" id="stockSelect">
+                    <option value="">Choose a stock...</option>
+                </select>
             </div>
+
+            <div class="form-group">
+                <label class="form-label">Purchase Price (₹)</label>
+                <input type="number" class="form-input" id="purchasePrice" placeholder="Enter price" step="0.01" min="0">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Quantity</label>
+                <input type="number" class="form-input" id="quantity" placeholder="Enter quantity" min="1">
+            </div>
+
+            <button class="submit-btn" onclick="addHolding()">Add to Portfolio</button>
         </div>
     </div>
+</div>
 
-    <div id="toast" class="toast">
-        <span class="toast-icon" id="toastIcon"></span>
-        <span class="toast-message" id="toastMessage"></span>
+<div id="removeHoldingModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Remove Holding</div>
+            <button class="close-btn" onclick="closeRemoveHoldingModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-box">
+                <div class="info-row">
+                    <span class="info-label">Stock:</span>
+                    <span class="info-value" id="removeStockSymbol">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Company:</span>
+                    <span class="info-value" id="removeCompanyName">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Holdings:</span>
+                    <span class="info-value" id="removeCurrentQty">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Avg Purchase Price:</span>
+                    <span class="info-value" id="removeAvgPrice">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Current Price:</span>
+                    <span class="info-value" id="removeCurrentPrice">-</span>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="setRemoveQuantity(0.25)">25%</button>
+                <button class="quick-btn" onclick="setRemoveQuantity(0.5)">50%</button>
+                <button class="quick-btn" onclick="setRemoveQuantity(0.75)">75%</button>
+                <button class="quick-btn" onclick="setRemoveQuantity(1)">All</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Quantity to Remove</label>
+                <div class="quantity-selector">
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="decreaseRemoveQty()">−</button>
+                        <input type="number" class="quantity-input" id="removeQuantity" value="1" min="1" oninput="updateRemoveSummary()">
+                        <button class="quantity-btn" onclick="increaseRemoveQty()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <div class="info-row">
+                    <span class="info-label">Removing:</span>
+                    <span class="info-value" id="removingQty">1 shares</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Value at Current Price:</span>
+                    <span class="info-value" id="removeValue">₹0.00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Profit/Loss:</span>
+                    <span class="info-value" id="removePL">₹0.00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Remaining:</span>
+                    <span class="info-value" id="remainingQty">- shares</span>
+                </div>
+            </div>
+
+            <button class="submit-btn danger" onclick="executeRemove()">Remove from Portfolio</button>
+        </div>
     </div>
+</div>
 
-    <script src="app.js"></script>
+<div id="toast" class="toast">
+    <span class="toast-icon" id="toastIcon"></span>
+    <span class="toast-message" id="toastMessage"></span>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
