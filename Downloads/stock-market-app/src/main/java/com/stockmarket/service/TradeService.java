@@ -9,7 +9,11 @@ import com.stockmarket.repository.TradeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -169,5 +173,32 @@ public class TradeService {
             return true;
         }
         return false;
+    }
+    public void importExternalTrades(MultipartFile file) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
+        String line;
+
+        // Skip the header (e.g., Ticker, Company, Quantity, Price)
+        reader.readLine();
+
+        while ((line = reader.readLine()) != null) {
+            String[] columns = line.split(",");
+
+            String ticker = columns[0];
+            String company = columns[1];
+            int quantity = Integer.parseInt(columns[2]);
+            double price = Double.parseDouble(columns[3]);
+
+            // Logic: Check if user already owns this stock in the Portfolio table
+            Portfolio portfolio = portfolioRepository.findByTickerId(ticker)
+                    .orElse(new Portfolio(ticker, company, 0, 0.0));
+
+            // Update with new data from the broker file
+            int newTotalQuantity = portfolio.getTotalQuantity() + quantity;
+            portfolio.setTotalQuantity(newTotalQuantity);
+            portfolio.setAveragePrice(price); // Simplified for import
+
+            portfolioRepository.save(portfolio);
+        }
     }
 }
