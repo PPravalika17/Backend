@@ -77,6 +77,15 @@
     
     <build>
         <plugins>
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+    <configuration>
+        <environmentVariables>
+            <!-- Load from .env file manually -->
+        </environmentVariables>
+    </configuration>
+</plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
