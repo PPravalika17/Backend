@@ -146,6 +146,50 @@ public class TradeService {
         }
     }
     
+    /**
+     * NEW METHOD: Sell shares from portfolio with quantity selection
+     * This method creates a SELL trade and updates the portfolio accordingly
+     */
+    @Transactional
+    public TradeResponse sellFromPortfolio(String tickerId, int quantity, double currentPrice) {
+        try {
+            // Validate portfolio existence
+            Optional<Portfolio> portfolioOpt = portfolioRepository.findByTickerId(tickerId);
+            if (!portfolioOpt.isPresent()) {
+                return new TradeResponse("ERROR", "Stock not found in portfolio");
+            }
+            
+            Portfolio portfolio = portfolioOpt.get();
+            
+            // Validate quantity
+            if (quantity <= 0) {
+                return new TradeResponse("ERROR", "Quantity must be greater than 0");
+            }
+            
+            if (quantity > portfolio.getTotalQuantity()) {
+                return new TradeResponse("ERROR", "Insufficient shares. You own only " + 
+                                        portfolio.getTotalQuantity() + " shares");
+            }
+            
+            // Create SELL trade request
+            TradeRequest sellRequest = new TradeRequest();
+            sellRequest.setTickerId(tickerId);
+            sellRequest.setCompanyName(portfolio.getCompanyName());
+            sellRequest.setTradeType("SELL");
+            sellRequest.setQuantity(quantity);
+            sellRequest.setPrice(currentPrice);
+            sellRequest.setTotalAmount(quantity * currentPrice);
+            sellRequest.setDate(LocalDateTime.now().toLocalDate().toString());
+            sellRequest.setTime(LocalDateTime.now().toLocalTime().toString());
+            
+            // Execute the trade
+            return executeTrade(sellRequest);
+            
+        } catch (Exception e) {
+            return new TradeResponse("ERROR", "Failed to sell shares: " + e.getMessage());
+        }
+    }
+    
     public List<Trade> getAllTrades() {
         return tradeRepository.findAllByOrderByTimestampDesc();
     }
@@ -174,6 +218,7 @@ public class TradeService {
         }
         return false;
     }
+    
     public void importExternalTrades(MultipartFile file) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
         String line;

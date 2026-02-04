@@ -1,19 +1,24 @@
 package com.stockmarket.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import java.util.*;
 
 @Service
 public class GeminiService {
-    private final String API_KEY = "AIzaSyBtODJB9iZ_dvx4sp7xhkhjyCEDLXwDTUg";
-    //private final String URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY;
-    // Change v1beta to v1 and ensure the model name is exactly gemini-1.5-flash
-    // Use v1beta (most flexible) and ensure the model name is spelled exactly like this
-    private final String URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" + API_KEY;
+    
+    @Value("${gemini.api.key}")
+    private String API_KEY;
+    
+    @Value("${gemini.api.url}")
+    private String GEMINI_URL;
 
     public String getAIResponse(String prompt) {
         RestTemplate restTemplate = new RestTemplate();
+        
+        // Build the full URL with API key
+        String url = GEMINI_URL + "?key=" + API_KEY;
 
         // The structure MUST be contents -> parts -> text
         Map<String, Object> textPart = Map.of("text", prompt);
@@ -22,7 +27,7 @@ public class GeminiService {
 
         try {
             // Sending the request to Google
-            Map<String, Object> response = restTemplate.postForObject(URL, requestBody, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
 
             // Digging through the JSON response to find the text
             List candidates = (List) response.get("candidates");

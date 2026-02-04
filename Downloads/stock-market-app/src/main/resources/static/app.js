@@ -1,6 +1,6 @@
 const BACKEND_API = 'http://localhost:8080/api';
 let allStocks = [];
-let currentTab = 'stocks';
+let currentTab = 'trending';
 let selectedExchange = 'NSE';
 let marketData = { NSE: {}, BSE: {} };
 let currentRemoveHolding = null;
@@ -33,21 +33,39 @@ const BSE_STOCKS = [
 
 function switchTab(tab) {
     currentTab = tab;
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    
+    // Update navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Find and activate the clicked nav item
+    const navItems = Array.from(document.querySelectorAll('.nav-item'));
+    const activeNav = navItems.find(item => item.textContent.toLowerCase().includes(tab));
+    if (activeNav) {
+        activeNav.classList.add('active');
+    }
+    
+    // Update content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
     document.getElementById(tab + 'Tab').classList.add('active');
     
-    const addBtn = document.getElementById('addHoldingBtn');
+    // Show/hide FAB based on tab
+    const fabAdd = document.getElementById('fabAdd');
     if (tab === 'portfolio') {
-        addBtn.classList.add('show');
+        fabAdd.classList.remove('hide');
+        fabAdd.classList.add('show');
         loadPortfolio();
         fetchMarketData();
     } else {
-        addBtn.classList.remove('show');
+        fabAdd.classList.remove('show');
+        fabAdd.classList.add('hide');
     }
     
     if (tab === 'history') loadTradeHistory();
+    if (tab === 'trending') fetchTrendingStocks();
 }
 
 function selectExchange(exchange) {
@@ -125,130 +143,165 @@ async function addHolding() {
     }
 }
 
-function openRemoveHoldingModal(holding) {
-    currentRemoveHolding = holding;
-    const currentPrice = getCurrentPrice(holding.tickerId);
+async function fetchTrendingStocks() {
+    const container = document.getElementById('stocksContainer');
+    container.innerHTML = '<div class="loading">Loading trending stocks from market...</div>';
     
-    document.getElementById('removeStockSymbol').textContent = holding.tickerId;
-    document.getElementById('removeCompanyName').textContent = holding.companyName || 'N/A';
-    document.getElementById('removeCurrentQty').textContent = `${holding.totalQuantity} shares`;
-    document.getElementById('removeAvgPrice').textContent = `₹${holding.averagePrice.toFixed(2)}`;
-    document.getElementById('removeCurrentPrice').textContent = currentPrice ? `₹${currentPrice.toFixed(2)}` : 'N/A';
-    
-    const removeQtyInput = document.getElementById('removeQuantity');
-    removeQtyInput.value = 1;
-    removeQtyInput.max = holding.totalQuantity;
-    
-    updateRemoveSummary();
-    document.getElementById('removeHoldingModal').classList.add('active');
-}
-
-function closeRemoveHoldingModal() {
-    document.getElementById('removeHoldingModal').classList.remove('active');
-    currentRemoveHolding = null;
-}
-
-function setRemoveQuantity(percentage) {
-    if (!currentRemoveHolding) return;
-    
-    const qty = Math.ceil(currentRemoveHolding.totalQuantity * percentage);
-    document.getElementById('removeQuantity').value = qty;
-    updateRemoveSummary();
-}
-
-function increaseRemoveQty() {
-    const input = document.getElementById('removeQuantity');
-    const currentVal = parseInt(input.value) || 1;
-    const maxVal = parseInt(input.max);
-    
-    if (currentVal < maxVal) {
-        input.value = currentVal + 1;
-        updateRemoveSummary();
-    }
-}
-
-function decreaseRemoveQty() {
-    const input = document.getElementById('removeQuantity');
-    const currentVal = parseInt(input.value) || 1;
-    
-    if (currentVal > 1) {
-        input.value = currentVal - 1;
-        updateRemoveSummary();
-    }
-}
-
-function updateRemoveSummary() {
-    if (!currentRemoveHolding) return;
-    
-    const removeQty = parseInt(document.getElementById('removeQuantity').value) || 1;
-    const currentPrice = getCurrentPrice(currentRemoveHolding.tickerId);
-    const avgPrice = currentRemoveHolding.averagePrice;
-    
-    document.getElementById('removingQty').textContent = `${removeQty} shares`;
-    
-    if (currentPrice) {
-        const currentValue = removeQty * currentPrice;
-        const investedValue = removeQty * avgPrice;
-        const profitLoss = currentValue - investedValue;
-        const plPercent = ((profitLoss / investedValue) * 100).toFixed(2);
+    try {
+        const response = await fetch(`${BACKEND_API}/stocks/trending`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
-        document.getElementById('removeValue').textContent = `₹${currentValue.toFixed(2)}`;
+        const data = await response.json();
+        console.log('Trending API Response:', data);
         
-        const plElement = document.getElementById('removePL');
-        const plText = `${profitLoss >= 0 ? '+' : ''}₹${profitLoss.toFixed(2)} (${profitLoss >= 0 ? '+' : ''}${plPercent}%)`;
-        plElement.textContent = plText;
-        plElement.className = `info-value ${profitLoss >= 0 ? 'profit-value' : 'loss-value'}`;
-    } else {
-        document.getElementById('removeValue').textContent = 'N/A';
-        document.getElementById('removePL').textContent = 'N/A';
+        if (data && data.trending_stocks) {
+            const topGainers = data.trending_stocks.top_gainers || [];
+            const topLosers = data.trending_stocks.top_losers || [];
+            const mostActive = data.trending_stocks.most_active || [];
+            
+            // Combine all stocks with their categories
+            const categorizedStocks = [
+                ...topGainers.map(s => ({...s, category: 'high-gainer'})),
+                ...topLosers.map(s => ({...s, category: 'high-loser'})),
+                ...mostActive.map(s => ({...s, category: 'most-active'}))
+            ];
+            
+            allStocks = categorizedStocks;
+            displayTrendingStocks(allStocks);
+        } else {
+            throw new Error('Invalid data structure');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = `<div class="error">Failed to load trending stocks. Please try again later.</div>`;
     }
-    
-    const remaining = currentRemoveHolding.totalQuantity - removeQty;
-    document.getElementById('remainingQty').textContent = `${remaining} shares`;
 }
 
-async function executeRemove() {
-    if (!currentRemoveHolding) return;
+function displayTrendingStocks(stocks) {
+    const container = document.getElementById('stocksContainer');
     
-    const removeQty = parseInt(document.getElementById('removeQuantity').value);
-    const currentPrice = getCurrentPrice(currentRemoveHolding.tickerId) || currentRemoveHolding.averagePrice;
-    
-    if (removeQty <= 0 || removeQty > currentRemoveHolding.totalQuantity) {
-        showToast('error', 'Invalid quantity');
+    if (!stocks || stocks.length === 0) {
+        container.innerHTML = `
+            <div class="no-results">
+                <div class="no-results-icon">📊</div>
+                <div>No trending stocks found</div>
+            </div>
+        `;
         return;
     }
     
-    const sellData = {
-        tickerId: currentRemoveHolding.tickerId,
-        companyName: currentRemoveHolding.companyName,
-        tradeType: 'SELL',
-        quantity: removeQty,
-        price: currentPrice,
-        totalAmount: removeQty * currentPrice,
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString(),
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        const response = await fetch(`${BACKEND_API}/trades`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(sellData)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to remove holding');
+    const stocksHTML = stocks.map((stock) => {
+        const price = parseFloat(stock.price || 0);
+        const change = parseFloat(stock.change || 0);
+        const changePercent = parseFloat(stock.change_percent || 0);
+        const volume = parseInt(stock.volume || 0);
+        const open = parseFloat(stock.open || 0);
+        const high = parseFloat(stock.high || 0);
+        const low = parseFloat(stock.low || 0);
+        const prevClose = parseFloat(stock.prev_close || 0);
+        
+        // Determine price change class
+        let changeClass = 'neutral';
+        let changeIcon = '';
+        if (change > 0) {
+            changeClass = 'positive';
+            changeIcon = '▲';
+        } else if (change < 0) {
+            changeClass = 'negative';
+            changeIcon = '▼';
         }
         
-        showToast('success', `Removed ${removeQty} shares of ${currentRemoveHolding.tickerId}`);
-        closeRemoveHoldingModal();
-        loadPortfolio();
+        // Category badge
+        let categoryBadge = '';
+        let categoryLabel = '';
+        if (stock.category === 'high-gainer') {
+            categoryLabel = '🚀 Top Gainer';
+        } else if (stock.category === 'high-loser') {
+            categoryLabel = '📉 Top Loser';
+        } else if (stock.category === 'most-active') {
+            categoryLabel = '⚡ Most Active';
+        }
         
-    } catch (error) {
-        console.error('Error:', error);
-        showToast('error', error.message || 'Failed to remove holding');
+        if (categoryLabel) {
+            categoryBadge = `<div class="performance-badge ${stock.category}">${categoryLabel}</div>`;
+        }
+        
+        const exchange = stock.exchange || (stock.ticker_id?.includes('.NS') ? 'NSE' : 'BSE');
+        
+        return `
+            <div class="stock-card">
+                ${categoryBadge}
+                <div class="stock-header">
+                    <div class="stock-symbol">${stock.ticker_id || 'N/A'}</div>
+                    <div class="stock-exchange">${exchange}</div>
+                </div>
+                <div class="stock-name">${stock.company_name || 'Unknown Company'}</div>
+                
+                <div class="stock-price-section">
+                    <div class="stock-price">₹${price.toFixed(2)}</div>
+                    ${change !== 0 ? `
+                        <div class="price-change ${changeClass}">
+                            ${changeIcon} ₹${Math.abs(change).toFixed(2)} (${changePercent.toFixed(2)}%)
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="stock-details">
+                    ${volume > 0 ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Volume:</span>
+                            <span class="detail-value">${volume.toLocaleString()}</span>
+                        </div>
+                    ` : ''}
+                    ${open > 0 ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Open:</span>
+                            <span class="detail-value">₹${open.toFixed(2)}</span>
+                        </div>
+                    ` : ''}
+                    ${high > 0 ? `
+                        <div class="detail-row">
+                            <span class="detail-label">High:</span>
+                            <span class="detail-value">₹${high.toFixed(2)}</span>
+                        </div>
+                    ` : ''}
+                    ${low > 0 ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Low:</span>
+                            <span class="detail-value">₹${low.toFixed(2)}</span>
+                        </div>
+                    ` : ''}
+                    ${prevClose > 0 ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Prev Close:</span>
+                            <span class="detail-value">₹${prevClose.toFixed(2)}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = `<div class="stocks-grid">${stocksHTML}</div>`;
+}
+
+function searchStocks() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    
+    if (!searchTerm) {
+        if (currentTab === 'trending') {
+            displayTrendingStocks(allStocks);
+        }
+        return;
+    }
+    
+    const filtered = allStocks.filter(stock => 
+        (stock.ticker_id || '').toLowerCase().includes(searchTerm) ||
+        (stock.company_name || '').toLowerCase().includes(searchTerm)
+    );
+    
+    if (currentTab === 'trending') {
+        displayTrendingStocks(filtered);
     }
 }
 
@@ -297,62 +350,10 @@ function calculateProfitLoss(purchasePrice, currentPrice, quantity) {
     return {
         amount: profitLoss.toFixed(2),
         percent: profitLossPercent,
-        isProfit: profitLoss >= 0
+        isProfit: profitLoss >= 0,
+        currentValue: currentValue.toFixed(2),
+        totalInvested: totalPurchase.toFixed(2)
     };
-}
-
-async function fetchStocks() {
-    const container = document.getElementById('stocksContainer');
-    container.innerHTML = '<div class="loading">Loading trending stocks...</div>';
-    try {
-        const response = await fetch(`${BACKEND_API}/stocks/trending`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (data && data.trending_stocks) {
-            const topGainers = data.trending_stocks.top_gainers || [];
-            const topLosers = data.trending_stocks.top_losers || [];
-            allStocks = [...topGainers, ...topLosers];
-            displayStocks(allStocks);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        container.innerHTML = `<div class="error">Failed to load stocks.</div>`;
-    }
-}
-
-function displayStocks(stocks) {
-    const container = document.getElementById('stocksContainer');
-    if (!stocks || stocks.length === 0) {
-        container.innerHTML = '<div class="no-results">No stocks found</div>';
-        return;
-    }
-    const stocksHTML = stocks.map((stock, index) => `
-        <div class="stock-card">
-            <div class="stock-symbol">${stock.ticker_id || 'N/A'}</div>
-            <div class="stock-name">${stock.company_name || 'Unknown'}</div>
-            <div class="stock-price">₹${parseFloat(stock.price || 0).toFixed(2)}</div>
-            <div class="stock-details">
-                <div class="detail-row">
-                    <span class="detail-label">Volume:</span>
-                    <span class="detail-value">${stock.volume ? parseInt(stock.volume).toLocaleString() : 'N/A'}</span>
-                </div>
-            </div>
-        </div>
-    `).join('');
-    container.innerHTML = `<div class="stocks-grid">${stocksHTML}</div>`;
-}
-
-function searchStocks() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-    if (!searchTerm) {
-        displayStocks(allStocks);
-        return;
-    }
-    const filtered = allStocks.filter(stock => 
-        (stock.ticker_id || '').toLowerCase().includes(searchTerm) ||
-        (stock.company_name || '').toLowerCase().includes(searchTerm)
-    );
-    displayStocks(filtered);
 }
 
 async function loadPortfolio() {
@@ -367,7 +368,13 @@ async function loadPortfolio() {
         const portfolio = await response.json();
         
         if (!portfolio || portfolio.length === 0) {
-            container.innerHTML = '<div class="no-results">No holdings in portfolio<br><br>Click the + button to add your first holding!</div>';
+            container.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">💼</div>
+                    <div>No holdings in portfolio</div>
+                    <p style="margin-top: 10px; font-size: 0.9em;">Click the + button to add your first holding!</p>
+                </div>
+            `;
             return;
         }
 
@@ -379,8 +386,8 @@ async function loadPortfolio() {
             let plRow = '';
             
             if (pl) {
-                plIndicator = `<div class="profit-indicator ${pl.isProfit ? 'profit' : 'loss'}">
-                    ${pl.isProfit ? '+' : ''}${pl.percent}%
+                plIndicator = `<div class="price-change ${pl.isProfit ? 'positive' : 'negative'}">
+                    ${pl.isProfit ? '▲' : '▼'} ${pl.percent}%
                 </div>`;
                 
                 plRow = `
@@ -397,12 +404,18 @@ async function loadPortfolio() {
                 `;
             }
             
+            const exchange = holding.tickerId?.includes('.NS') ? 'NSE' : 'BSE';
+            
             return `
                 <div class="stock-card">
-                    <button class="remove-btn" onclick='openRemoveHoldingModal(${JSON.stringify(holding).replace(/'/g, "&apos;")})' title="Remove Holding">×</button>
-                    ${plIndicator}
-                    <div class="stock-symbol">${holding.tickerId}</div>
+                    <div class="stock-header">
+                        <div class="stock-symbol">${holding.tickerId}</div>
+                        <div class="stock-exchange">${exchange}</div>
+                    </div>
                     <div class="stock-name">${holding.companyName || 'Unknown'}</div>
+                    
+                    ${plIndicator ? `<div class="stock-price-section">${plIndicator}</div>` : ''}
+                    
                     <div class="stock-details">
                         <div class="detail-row">
                             <span class="detail-label">Quantity:</span>
@@ -418,6 +431,10 @@ async function loadPortfolio() {
                             <span class="detail-value">₹${(holding.averagePrice * holding.totalQuantity).toFixed(2)}</span>
                         </div>
                     </div>
+                    
+                    <button class="remove-stock-btn" onclick='openRemoveStockModal(${JSON.stringify(holding).replace(/'/g, "\\'")})'>
+                        🗑️ Remove from Portfolio
+                    </button>
                 </div>
             `;
         }).join('');
@@ -429,67 +446,280 @@ async function loadPortfolio() {
     }
 }
 
+function openRemoveStockModal(holding) {
+    currentRemoveHolding = holding;
+    const modal = document.getElementById('removeStockModal');
+    
+    const currentPrice = getCurrentPrice(holding.tickerId);
+    const exchange = holding.tickerId?.includes('.NS') ? 'NSE' : 'BSE';
+    
+    // Populate stock information
+    document.getElementById('removeStockSymbol').textContent = holding.tickerId;
+    document.getElementById('removeStockExchange').textContent = exchange;
+    document.getElementById('removeStockName').textContent = holding.companyName || 'Unknown';
+    document.getElementById('removeStockQuantity').textContent = holding.totalQuantity;
+    document.getElementById('removeStockPurchasePrice').textContent = `₹${holding.averagePrice.toFixed(2)}`;
+    
+    const totalInvested = holding.averagePrice * holding.totalQuantity;
+    document.getElementById('removeStockInvested').textContent = `₹${totalInvested.toFixed(2)}`;
+    
+    // Set current price
+    document.getElementById('removeStockCurrentPrice').textContent = currentPrice 
+        ? `₹${currentPrice.toFixed(2)}` 
+        : 'Not Available';
+    
+    // Initialize quantity selector
+    const quantityInput = document.getElementById('sellQuantity');
+    const quantitySlider = document.getElementById('quantitySlider');
+    
+    quantityInput.max = holding.totalQuantity;
+    quantityInput.value = holding.totalQuantity; // Default to selling all
+    
+    quantitySlider.max = holding.totalQuantity;
+    quantitySlider.value = holding.totalQuantity;
+    
+    // Initial calculation
+    updateSellCalculations();
+    
+    modal.classList.add('active');
+}
+
+function closeRemoveStockModal() {
+    document.getElementById('removeStockModal').classList.remove('active');
+    currentRemoveHolding = null;
+}
+
+function increaseQuantity() {
+    const input = document.getElementById('sellQuantity');
+    const max = parseInt(input.max);
+    const current = parseInt(input.value) || 0;
+    
+    if (current < max) {
+        input.value = current + 1;
+        updateSellCalculations();
+    }
+}
+
+function decreaseQuantity() {
+    const input = document.getElementById('sellQuantity');
+    const min = parseInt(input.min);
+    const current = parseInt(input.value) || 0;
+    
+    if (current > min) {
+        input.value = current - 1;
+        updateSellCalculations();
+    }
+}
+
+function updateQuantityFromSlider() {
+    const slider = document.getElementById('quantitySlider');
+    const input = document.getElementById('sellQuantity');
+    input.value = slider.value;
+    updateSellCalculations();
+}
+
+function setQuantityPreset(percentage) {
+    if (!currentRemoveHolding) return;
+    
+    const totalQuantity = currentRemoveHolding.totalQuantity;
+    const quantity = Math.max(1, Math.floor(totalQuantity * percentage / 100));
+    
+    const input = document.getElementById('sellQuantity');
+    const slider = document.getElementById('quantitySlider');
+    
+    input.value = quantity;
+    slider.value = quantity;
+    
+    updateSellCalculations();
+}
+
+function updateSellCalculations() {
+    if (!currentRemoveHolding) return;
+    
+    const sellQuantity = parseInt(document.getElementById('sellQuantity').value) || 0;
+    const slider = document.getElementById('quantitySlider');
+    slider.value = sellQuantity;
+    
+    // Prevent invalid quantities
+    if (sellQuantity < 1 || sellQuantity > currentRemoveHolding.totalQuantity) {
+        return;
+    }
+    
+    const currentPrice = getCurrentPrice(currentRemoveHolding.tickerId) || currentRemoveHolding.averagePrice;
+    const purchasePrice = currentRemoveHolding.averagePrice;
+    
+    // Calculate values
+    const totalSaleAmount = sellQuantity * currentPrice;
+    const totalCost = sellQuantity * purchasePrice;
+    const profitLoss = totalSaleAmount - totalCost;
+    const isProfit = profitLoss >= 0;
+    
+    // Update summary
+    document.getElementById('summaryQuantity').textContent = sellQuantity;
+    document.getElementById('summarySalePrice').textContent = `₹${currentPrice.toFixed(2)}`;
+    document.getElementById('summaryTotalSale').textContent = `₹${totalSaleAmount.toFixed(2)}`;
+    document.getElementById('summaryTotalCost').textContent = `₹${totalCost.toFixed(2)}`;
+    
+    const plElement = document.getElementById('summaryProfitLoss');
+    plElement.textContent = `${isProfit ? '+' : ''}₹${profitLoss.toFixed(2)}`;
+    plElement.className = `summary-value ${isProfit ? 'profit' : 'loss'}`;
+    
+    // Show warning if selling all shares
+    const warningMessage = document.getElementById('warningMessage');
+    if (sellQuantity === currentRemoveHolding.totalQuantity) {
+        warningMessage.style.display = 'flex';
+    } else {
+        warningMessage.style.display = 'none';
+    }
+}
+
+async function confirmRemoveStock() {
+    if (!currentRemoveHolding) {
+        showToast('error', 'No stock selected');
+        return;
+    }
+    
+    const sellQuantity = parseInt(document.getElementById('sellQuantity').value);
+    
+    if (!sellQuantity || sellQuantity < 1 || sellQuantity > currentRemoveHolding.totalQuantity) {
+        showToast('error', 'Invalid quantity');
+        return;
+    }
+    
+    const currentPrice = getCurrentPrice(currentRemoveHolding.tickerId) || currentRemoveHolding.averagePrice;
+    
+    // Use the new sell-from-portfolio endpoint
+    const sellData = {
+        tickerId: currentRemoveHolding.tickerId,
+        quantity: sellQuantity,
+        currentPrice: currentPrice
+    };
+    
+    try {
+        const response = await fetch(`${BACKEND_API}/trades/sell-from-portfolio`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(sellData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to sell stock');
+        }
+        
+        const result = await response.json();
+        
+        if (result.status === 'SUCCESS') {
+            const totalCost = sellQuantity * currentRemoveHolding.averagePrice;
+            const totalSale = sellQuantity * currentPrice;
+            const profitLoss = totalSale - totalCost;
+            const isProfit = profitLoss >= 0;
+            
+            let message = `Sold ${sellQuantity} shares of ${currentRemoveHolding.tickerId}`;
+            if (isProfit) {
+                message += ` with profit of ₹${profitLoss.toFixed(2)}`;
+            } else {
+                message += ` with loss of ₹${Math.abs(profitLoss).toFixed(2)}`;
+            }
+            
+            showToast('success', message);
+            closeRemoveStockModal();
+            loadPortfolio();
+            
+            // Switch to portfolio tab to see updated holdings
+            if (currentTab !== 'portfolio') {
+                switchTab('portfolio');
+            }
+        } else {
+            throw new Error(result.message || 'Failed to sell stock');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('error', error.message || 'Failed to sell stock');
+    }
+}
+
 async function loadTradeHistory() {
     const container = document.getElementById('historyContainer');
     container.innerHTML = '<div class="loading">Loading trade history...</div>';
+    
     try {
         const response = await fetch(`${BACKEND_API}/trades`);
         if (!response.ok) throw new Error('Failed to load history');
         const trades = await response.json();
         
         if (!trades || trades.length === 0) {
-            container.innerHTML = '<div class="no-results">No trades yet</div>';
+            container.innerHTML = `
+                <div class="no-trades">
+                    <div class="no-trades-icon">📊</div>
+                    <div class="no-trades-text">No trades yet</div>
+                    <div class="no-trades-subtext">Start trading to see your history here</div>
+                </div>
+            `;
             return;
         }
 
-        // Sort trades by timestamp (newest first)
         const sortedTrades = trades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        const tableRows = sortedTrades.map(trade => {
-            const tradeDate = new Date(trade.timestamp);
-            const dateStr = tradeDate.toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            const timeStr = tradeDate.toLocaleTimeString('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            return `
-                <tr>
-                    <td class="date-cell">${dateStr}<br><small>${timeStr}</small></td>
-                    <td><strong>${trade.tickerId}</strong><br><small>${trade.companyName || 'N/A'}</small></td>
-                    <td><span class="type-badge badge-${trade.tradeType.toLowerCase()}">${trade.tradeType}</span></td>
-                    <td style="text-align: right;">${trade.quantity}</td>
-                    <td style="text-align: right;">₹${trade.price.toFixed(2)}</td>
-                    <td style="text-align: right;"><strong>₹${trade.totalAmount.toFixed(2)}</strong></td>
-                </tr>
-            `;
-        }).join('');
-
-        const historyHTML = `
+        // Create table HTML
+        const tableHTML = `
             <div class="history-table-container">
-                <table class="trade-table">
+                <table class="history-table">
                     <thead>
                         <tr>
                             <th>Date & Time</th>
                             <th>Stock</th>
                             <th>Type</th>
-                            <th style="text-align: right;">Quantity</th>
-                            <th style="text-align: right;">Price</th>
-                            <th style="text-align: right;">Total Amount</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Total Amount</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${tableRows}
+                        ${sortedTrades.map(trade => {
+                            const tradeDate = new Date(trade.timestamp);
+                            const dateStr = tradeDate.toLocaleDateString('en-IN', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            const timeStr = tradeDate.toLocaleTimeString('en-IN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+
+                            const tradeTypeClass = trade.tradeType === 'BUY' ? 'buy' : 'sell';
+
+                            return `
+                                <tr>
+                                    <td>
+                                        <div class="date-time-info">
+                                            <div class="trade-date">${dateStr}</div>
+                                            <div class="trade-time">${timeStr}</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="stock-info">
+                                            <div class="stock-symbol">${trade.tickerId}</div>
+                                            <div class="company-name">${trade.companyName || 'N/A'}</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="trade-type-badge ${tradeTypeClass}">${trade.tradeType}</span>
+                                    </td>
+                                    <td>${trade.quantity}</td>
+                                    <td>₹${trade.price.toFixed(2)}</td>
+                                    <td><span class="amount-value">₹${trade.totalAmount.toFixed(2)}</span></td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>
         `;
 
-        container.innerHTML = historyHTML;
+        container.innerHTML = tableHTML;
     } catch (error) {
         console.error('Error:', error);
         container.innerHTML = '<div class="error">Failed to load trade history</div>';
@@ -498,7 +728,6 @@ async function loadTradeHistory() {
 
 async function exportTradesToPDF() {
     try {
-        // Fetch trade data
         const response = await fetch(`${BACKEND_API}/trades`);
         if (!response.ok) throw new Error('Failed to load trades');
         const trades = await response.json();
@@ -508,24 +737,19 @@ async function exportTradesToPDF() {
             return;
         }
 
-        // Sort trades by timestamp (newest first)
         const sortedTrades = trades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        // Initialize jsPDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // Add title
         doc.setFontSize(20);
         doc.setTextColor(40, 40, 40);
         doc.text('Trade History Report', 14, 22);
 
-        // Add generation date
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.text(`Generated on: ${new Date().toLocaleString('en-IN')}`, 14, 30);
 
-        // Calculate summary statistics
         const totalBuys = sortedTrades.filter(t => t.tradeType === 'BUY').length;
         const totalSells = sortedTrades.filter(t => t.tradeType === 'SELL').length;
         const totalBuyAmount = sortedTrades
@@ -535,7 +759,6 @@ async function exportTradesToPDF() {
             .filter(t => t.tradeType === 'SELL')
             .reduce((sum, t) => sum + t.totalAmount, 0);
 
-        // Add summary section
         doc.setFontSize(12);
         doc.setTextColor(40, 40, 40);
         doc.text('Summary:', 14, 40);
@@ -547,7 +770,6 @@ async function exportTradesToPDF() {
         doc.text(`Total Buy Amount: Rs. ${totalBuyAmount.toFixed(2)}`, 14, 65);
         doc.text(`Total Sell Amount: Rs. ${totalSellAmount.toFixed(2)}`, 14, 71);
 
-        // Prepare table data
         const tableData = sortedTrades.map(trade => {
             const tradeDate = new Date(trade.timestamp);
             const dateStr = tradeDate.toLocaleDateString('en-IN', {
@@ -570,7 +792,6 @@ async function exportTradesToPDF() {
             ];
         });
 
-        // Add table using autoTable plugin
         doc.autoTable({
             startY: 80,
             head: [['Date & Time', 'Stock', 'Type', 'Quantity', 'Price', 'Total Amount']],
@@ -596,7 +817,6 @@ async function exportTradesToPDF() {
                 5: { cellWidth: 30, halign: 'right' }
             },
             didParseCell: function(data) {
-                // Color code BUY and SELL
                 if (data.column.index === 2 && data.cell.section === 'body') {
                     if (data.cell.raw === 'BUY') {
                         data.cell.styles.textColor = [46, 204, 113];
@@ -610,7 +830,6 @@ async function exportTradesToPDF() {
             margin: { top: 80 }
         });
 
-        // Add footer with page numbers
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
@@ -624,7 +843,6 @@ async function exportTradesToPDF() {
             );
         }
 
-        // Save the PDF
         const filename = `Trade_History_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(filename);
 
@@ -643,68 +861,20 @@ function showToast(type, message) {
     setTimeout(() => toast.classList.remove('show'), 4000);
 }
 
-window.onclick = function(event) {
-    if (event.target.id === 'addHoldingModal') closeAddHoldingModal();
-    if (event.target.id === 'removeHoldingModal') closeRemoveHoldingModal();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchStocks();
-    });
-    fetchStocks();
-});
-
-setInterval(() => {
-    if (currentTab === 'portfolio') {
-        fetchMarketData();
-        loadPortfolio();
-    }
-}, 30000);
-
-// --- CHATBOT LOGIC ---
-
 function toggleChat() {
     const modal = document.getElementById('chatModal');
-    modal.classList.toggle('active');
-    if (modal.classList.contains('active')) {
-        askBot(""); // Load initial greeting and 4 options
+    if (modal) {
+        modal.classList.toggle('active');
+        if (modal.classList.contains('active')) {
+            askBot("GREETING");
+        }
     }
 }
 
-/*
-async function askBot(userChoice = "") {
-    const botResponseBox = document.getElementById('botResponse');
-    const optionsContainer = document.getElementById('chatOptions');
-
-    try {
-        const response = await fetch(`${BACKEND_API}/chat/ask`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: userChoice // This sends the exact text of the button
-        });
-
-        const data = await response.json();
-        botResponseBox.innerText = data.botMessage;
-
-        optionsContainer.innerHTML = "";
-        data.options.forEach(optText => {
-            const btn = document.createElement('button');
-            btn.className = 'chat-option-btn'; // Use the class we defined in CSS
-            btn.innerText = optText;
-            btn.onclick = () => askBot(optText); // This triggers the logic above
-            optionsContainer.appendChild(btn);
-        });
-    } catch (error) {
-        console.error("Connection Error:", error);
-        botResponseBox.innerText = "Connection error. Ensure the backend is running.";
-    }
-}*/
 async function askBot(userChoice = "GREETING") {
     const botResponseBox = document.getElementById('botResponse');
     const optionsContainer = document.getElementById('chatOptions');
 
-    // Show a loading state while Gemini thinks
     if (userChoice !== "GREETING") {
         botResponseBox.innerHTML = "<i>Gemini is analyzing your portfolio... Please wait.</i>";
     }
@@ -717,15 +887,12 @@ async function askBot(userChoice = "GREETING") {
         });
 
         const data = await response.json();
-
-        // 1. Update the Bot's message (Gemini response)
         botResponseBox.innerText = data.botMessage;
 
-        // 2. Clear and update buttons (Performance Analysis / Investment Suggestions)
         optionsContainer.innerHTML = "";
         data.options.forEach(optText => {
             const btn = document.createElement('button');
-            btn.className = 'chat-option-btn'; // Use your existing button style
+            btn.className = 'chat-option-btn';
             btn.style.width = "100%";
             btn.style.padding = "12px";
             btn.innerText = optText;
@@ -735,15 +902,33 @@ async function askBot(userChoice = "GREETING") {
 
     } catch (error) {
         console.error('Chat Error:', error);
-        botResponseBox.innerText = "Error connecting to AI Assistant. Is the backend running?";
+        if (botResponseBox) {
+            botResponseBox.innerText = "Error connecting to AI Assistant. Is the backend running?";
+        }
     }
 }
 
-// Add this to your toggle function to start the chat
-function toggleChat() {
-    const modal = document.getElementById('chatModal');
-    modal.classList.toggle('active');
-    if (modal.classList.contains('active')) {
-        askBot("GREETING"); // Trigger the first AI menu
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    fetchTrendingStocks();
+    
+    // Add enter key support for search
+    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchStocks();
+    });
+});
+
+// Auto-refresh trending stocks every 2 minutes
+setInterval(() => {
+    if (currentTab === 'trending') {
+        fetchTrendingStocks();
     }
-}
+}, 120000);
+
+// Auto-refresh portfolio every 30 seconds
+setInterval(() => {
+    if (currentTab === 'portfolio') {
+        fetchMarketData();
+        loadPortfolio();
+    }
+}, 30000);

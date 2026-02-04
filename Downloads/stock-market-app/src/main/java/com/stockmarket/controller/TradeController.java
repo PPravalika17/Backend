@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import com.lowagie.text.Document;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Font;
@@ -49,6 +50,31 @@ public class TradeController {
             }
         } catch (Exception e) {
             TradeResponse errorResponse = new TradeResponse("ERROR", "Failed to execute trade: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
+    /**
+     * NEW ENDPOINT: Sell shares from portfolio with quantity selection
+     * POST /api/trades/sell-from-portfolio
+     * Body: { "tickerId": "ONGC.NS", "quantity": 10, "currentPrice": 245.50 }
+     */
+    @PostMapping("/sell-from-portfolio")
+    public ResponseEntity<TradeResponse> sellFromPortfolio(@RequestBody Map<String, Object> request) {
+        try {
+            String tickerId = (String) request.get("tickerId");
+            int quantity = ((Number) request.get("quantity")).intValue();
+            double currentPrice = ((Number) request.get("currentPrice")).doubleValue();
+            
+            TradeResponse response = tradeService.sellFromPortfolio(tickerId, quantity, currentPrice);
+            
+            if ("SUCCESS".equals(response.getStatus())) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (Exception e) {
+            TradeResponse errorResponse = new TradeResponse("ERROR", "Failed to sell shares: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -116,6 +142,7 @@ public class TradeController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    
     @GetMapping("/export/pdf")
     public void exportToPDF(HttpServletResponse response) throws IOException {
         response.setContentType("application/pdf");
@@ -151,6 +178,7 @@ public class TradeController {
         document.add(table);
         document.close();
     }
+    
     @PostMapping("/import-broker-data")
     public ResponseEntity<String> importBrokerData(@RequestParam("file") MultipartFile file) {
         try {
@@ -161,5 +189,4 @@ public class TradeController {
                     .body("Failed to parse broker file: " + e.getMessage());
         }
     }
-
 }
