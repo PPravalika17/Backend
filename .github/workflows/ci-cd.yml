@@ -1,0 +1,57 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    - name: Create test config
+      run: |
+        mkdir -p src/main/resources
+        echo "server.port=8080" > src/main/resources/application-test.properties
+        echo "spring.datasource.url=jdbc:h2:mem:testdb" >> src/main/resources/application-test.properties
+        echo "spring.datasource.driverClassName=org.h2.Driver" >> src/main/resources/application-test.properties
+        echo "spring.jpa.hibernate.ddl-auto=create-drop" >> src/main/resources/application-test.properties
+        echo "stock.api.key=test-key" >> src/main/resources/application-test.properties
+        echo "gemini.api.key=test-key" >> src/main/resources/application-test.properties
+    - name: Run tests
+      run: mvn clean test -Dspring.profiles.active=test
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: target/surefire-reports/
+
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    - name: Build
+      run: mvn clean package -DskipTests
+    - name: Upload JAR
+      uses: actions/upload-artifact@v4
+      with:
+        name: application-jar
+        path: target/*.jar
