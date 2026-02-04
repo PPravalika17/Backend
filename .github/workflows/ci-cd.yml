@@ -2,33 +2,69 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ master ]  # Changed from "main" and "develop" to "master"
+    branches: [ master, develop ]
   pull_request:
-    branches: [ master ]  # Changed from "main" and "develop" to "master"
+    branches: [ master, develop ]
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
+    
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+    
     - name: Create test config
       run: |
         mkdir -p src/main/resources
-        echo "server.port=8080" > src/main/resources/application-test.properties
-        echo "spring.datasource.url=jdbc:h2:mem:testdb" >> src/main/resources/application-test.properties
-        echo "spring.datasource.driverClassName=org.h2.Driver" >> src/main/resources/application-test.properties
-        echo "spring.jpa.hibernate.ddl-auto=create-drop" >> src/main/resources/application-test.properties
-        echo "stock.api.key=test-key" >> src/main/resources/application-test.properties
-        echo "gemini.api.key=test-key" >> src/main/resources/application-test.properties
+        cat > src/main/resources/application-test.properties << EOF
+        # Server Configuration
+        server.port=8080
+        
+        # H2 Test Database
+        spring.datasource.url=jdbc:h2:mem:testdb
+        spring.datasource.driverClassName=org.h2.Driver
+        spring.datasource.username=sa
+        spring.datasource.password=
+        spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+        spring.jpa.hibernate.ddl-auto=create-drop
+        spring.jpa.show-sql=false
+        
+        # Stock API Configuration (test values)
+        stock.api.key=test-stock-api-key
+        stock.api.url=https://api.example.com/stock
+        
+        # Gemini API Configuration (test values)
+        gemini.api.key=test-gemini-api-key
+        gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
+        
+        # Disable unnecessary features in tests
+        spring.jpa.properties.hibernate.format_sql=false
+        logging.level.org.hibernate.SQL=WARN
+        logging.level.org.springframework=WARN
+        EOF
+    
     - name: Run tests
       run: mvn clean test -Dspring.profiles.active=test
+    
+    - name: Generate test report
+      if: always()
+      run: |
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f target/surefire-reports/TEST-*.xml ]; then
+          echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Test execution failed" >> $GITHUB_STEP_SUMMARY
+        fi
+    
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
@@ -40,16 +76,20 @@ jobs:
     name: Build
     needs: test
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
+    
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+    
     - name: Build
       run: mvn clean package -DskipTests
+    
     - name: Upload JAR
       uses: actions/upload-artifact@v4
       with:
