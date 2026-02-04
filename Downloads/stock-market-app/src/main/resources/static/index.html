@@ -10,103 +10,211 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1d2e 0%, #16213e 100%);
+            background: #0f1419;
             min-height: 100vh;
-            padding: 20px;
+            overflow-x: hidden;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #1a1d2e;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #1a1d2e 0%, #1a1d2e 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-bottom: 1px solid #2d3447;
-        }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .header p { font-size: 1.1em; opacity: 0.9; }
-        .nav-tabs {
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(180deg, #1a1f2e 0%, #151a26 100%);
+            border-right: 1px solid #2a3441;
+            z-index: 1000;
             display: flex;
-            background: #252a3d;
-            border-bottom: 2px solid #2d3447;
+            flex-direction: column;
+            transition: transform 0.3s ease;
         }
-        .nav-tab {
+        
+        .sidebar-header {
+            padding: 30px 25px;
+            border-bottom: 1px solid #2a3441;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+        }
+        
+        .sidebar-menu {
             flex: 1;
-            padding: 15px;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+        
+        .menu-item {
+            padding: 15px 25px;
+            color: #8a92a6;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1em;
+            border-left: 3px solid transparent;
+        }
+        
+        .menu-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #ffffff;
+            border-left-color: #667eea;
+        }
+        
+        .menu-item.active {
+            background: rgba(102, 126, 234, 0.15);
+            color: #667eea;
+            border-left-color: #667eea;
+            font-weight: 600;
+        }
+        
+        .menu-icon {
+            font-size: 1.3em;
+            width: 24px;
             text-align: center;
+        }
+        
+        .sidebar-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #2a3441;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #8a92a6;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            background: #0f1419;
+        }
+        
+        .top-bar {
+            background: #1a1f2e;
+            border-bottom: 1px solid #2a3441;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        
+        .top-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .action-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
             background: #252a3d;
             color: #8a92a6;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: all 0.3s;
+            border: 1px solid #2a3441;
         }
-        .nav-tab:hover { background: #2d3447; color: #ffffff; }
-        .nav-tab.active {
-            background: #1a1d2e;
-            color: #5cb85c;
-            border-bottom: 3px solid #5cb85c;
+        
+        .btn-secondary:hover {
+            background: #2d3447;
+            color: #ffffff;
         }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .add-holding-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 2em;
-            cursor: pointer;
-            box-shadow: 0 8px 16px rgba(92, 184, 92, 0.4);
-            transition: all 0.3s;
-            z-index: 999;
-            display: none;
+        
+        .content-area {
+            padding: 30px 40px;
         }
-        .add-holding-btn.show { display: block; }
-        .add-holding-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 12px 24px rgba(92, 184, 92, 0.6);
+        
+        .container {
+            max-width: 100%;
+            background: transparent;
         }
+        
+        /* Original Styles - Updated */
         .search-container {
-            padding: 30px;
-            background: #1a1d2e;
-            border-bottom: 2px solid #2d3447;
+            padding: 0 0 30px 0;
+            background: transparent;
+            border-bottom: none;
         }
         .search-box {
             display: flex;
             gap: 10px;
             max-width: 600px;
-            margin: 0 auto;
         }
         .search-input {
             flex: 1;
             padding: 15px 20px;
-            border: 2px solid #2d3447;
+            border: 2px solid #2a3441;
             border-radius: 10px;
             font-size: 16px;
             outline: none;
             transition: all 0.3s;
-            background: #252a3d;
+            background: #1a1f2e;
             color: #e0e0e0;
         }
         .search-input:focus {
-            border-color: #5cb85c;
-            box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.2);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
         .search-btn {
             padding: 15px 30px;
-            background: #5cb85c;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -116,14 +224,14 @@
             transition: all 0.2s;
         }
         .search-btn:hover {
-            background: #4cae4c;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         .loading {
             text-align: center;
             padding: 50px;
             font-size: 1.2em;
-            color: #5cb85c;
+            color: #667eea;
         }
         .error {
             text-align: center;
@@ -135,11 +243,10 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
-            padding: 30px;
         }
         .stock-card {
-            background: #252a3d;
-            border: 2px solid #2d3447;
+            background: #1a1f2e;
+            border: 2px solid #2a3441;
             border-radius: 12px;
             padding: 20px;
             transition: all 0.3s;
@@ -148,8 +255,8 @@
         }
         .stock-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(92, 184, 92, 0.2);
-            border-color: #5cb85c;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
         }
         .profit-indicator {
             position: absolute;
@@ -197,7 +304,7 @@
         .stock-symbol {
             font-size: 1.5em;
             font-weight: bold;
-            color: #5cb85c;
+            color: #667eea;
             margin-bottom: 5px;
         }
         .stock-name {
@@ -214,7 +321,7 @@
         .stock-details {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #2d3447;
+            border-top: 1px solid #2a3441;
         }
         .detail-row {
             display: flex;
@@ -235,15 +342,17 @@
             color: #8a92a6;
             font-size: 1.2em;
         }
+        
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
+            z-index: 2000;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.8);
             overflow-y: auto;
         }
         .modal.active {
@@ -253,7 +362,7 @@
             padding: 20px;
         }
         .modal-content {
-            background: #1a1d2e;
+            background: #1a1f2e;
             border-radius: 20px;
             max-width: 600px;
             width: 100%;
@@ -261,24 +370,25 @@
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             animation: slideIn 0.3s ease-out;
+            border: 1px solid #2a3441;
         }
         @keyframes slideIn {
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
         .modal-header {
-            background: #252a3d;
+            background: #1e2432;
             color: white;
             padding: 25px 30px;
             border-radius: 20px 20px 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #2d3447;
+            border-bottom: 1px solid #2a3441;
         }
         .modal-title { font-size: 1.8em; font-weight: bold; }
         .close-btn {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             color: white;
             font-size: 28px;
@@ -291,8 +401,8 @@
             justify-content: center;
             transition: background 0.3s;
         }
-        .close-btn:hover { background: rgba(255, 255, 255, 0.3); }
-        .modal-body { padding: 30px; background: #1a1d2e; }
+        .close-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .modal-body { padding: 30px; background: #1a1f2e; }
         .form-group { margin-bottom: 20px; }
         .form-label {
             display: block;
@@ -303,8 +413,8 @@
         .form-input, .form-select {
             width: 100%;
             padding: 12px 15px;
-            background: #252a3d;
-            border: 2px solid #2d3447;
+            background: #0f1419;
+            border: 2px solid #2a3441;
             border-radius: 8px;
             color: #ffffff;
             font-size: 1em;
@@ -312,11 +422,11 @@
             transition: all 0.3s;
         }
         .form-input:focus, .form-select:focus {
-            border-color: #5cb85c;
-            box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.2);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
         .form-select option {
-            background: #252a3d;
+            background: #1a1f2e;
             color: #ffffff;
         }
         .exchange-tabs {
@@ -327,8 +437,8 @@
         .exchange-tab {
             flex: 1;
             padding: 12px;
-            background: #252a3d;
-            border: 2px solid #2d3447;
+            background: #0f1419;
+            border: 2px solid #2a3441;
             border-radius: 8px;
             color: #8a92a6;
             cursor: pointer;
@@ -337,18 +447,18 @@
             transition: all 0.3s;
         }
         .exchange-tab.active {
-            background: #5cb85c;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-color: #5cb85c;
+            border-color: #667eea;
         }
         .exchange-tab:hover:not(.active) {
-            border-color: #5cb85c;
+            border-color: #667eea;
             color: #ffffff;
         }
         .submit-btn {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -360,7 +470,7 @@
         }
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(92, 184, 92, 0.4);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
         }
         .submit-btn.danger {
             background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
@@ -369,8 +479,8 @@
             box-shadow: 0 8px 16px rgba(231, 76, 60, 0.4);
         }
         .info-box {
-            background: #252a3d;
-            border-left: 4px solid #5cb85c;
+            background: #0f1419;
+            border-left: 4px solid #667eea;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -401,16 +511,16 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: #252a3d;
+            background: #0f1419;
             border-radius: 10px;
             padding: 5px;
-            border: 2px solid #2d3447;
+            border: 2px solid #2a3441;
         }
         .quantity-btn {
             width: 40px;
             height: 40px;
             border: none;
-            background: #5cb85c;
+            background: #667eea;
             color: white;
             font-size: 1.5em;
             font-weight: bold;
@@ -419,7 +529,7 @@
             transition: all 0.2s;
         }
         .quantity-btn:hover {
-            background: #4cae4c;
+            background: #764ba2;
             transform: scale(1.1);
         }
         .quantity-btn:disabled {
@@ -445,8 +555,8 @@
         .quick-btn {
             flex: 1;
             padding: 10px;
-            background: #252a3d;
-            border: 2px solid #2d3447;
+            background: #0f1419;
+            border: 2px solid #2a3441;
             border-radius: 8px;
             color: #8a92a6;
             cursor: pointer;
@@ -455,363 +565,487 @@
             transition: all 0.3s;
         }
         .quick-btn:hover {
-            border-color: #5cb85c;
-            color: #5cb85c;
+            border-color: #667eea;
+            color: #667eea;
         }
         .toast {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            background: #252a3d;
+            background: #1a1f2e;
             padding: 20px 25px;
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
             display: none;
             align-items: center;
             gap: 15px;
-            z-index: 2000;
+            z-index: 3000;
             min-width: 300px;
             color: #ffffff;
+            border: 1px solid #2a3441;
         }
         .toast.show { display: flex; animation: slideInRight 0.3s ease-out; }
-        .toast.success { border-left: 5px solid #5cb85c; }
+        .toast.success { border-left: 5px solid #2ecc71; }
         .toast.error { border-left: 5px solid #e74c3c; }
         @keyframes slideInRight {
             from { transform: translateX(100%); }
             to { transform: translateX(0); }
         }
+        
+        /* History Table */
+        .history-table-container {
+            overflow-x: auto;
+        }
+        .trade-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1a1f2e;
+            border-radius: 12px;
+            overflow: hidden;
+            color: #e0e0e0;
+        }
+        .trade-table th {
+            background: #1e2432;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #8a92a6;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+        }
+        .trade-table td {
+            padding: 15px;
+            border-bottom: 1px solid #2a3441;
+        }
+        .trade-table tr:last-child td {
+            border-bottom: none;
+        }
+        .trade-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .badge-buy { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+        .badge-sell { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+        .date-cell { color: #8a92a6; font-size: 0.9em; }
+        
+        /* Floating Action Button */
+        .add-holding-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 2em;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            z-index: 999;
+            display: none;
+        }
+        .add-holding-btn.show { display: block; }
+        .add-holding-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Chatbot Button */
+        .chat-bubble-btn {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(52, 152, 219, 0.4);
+            transition: all 0.3s;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-bubble-btn:hover { transform: scale(1.1); }
+        
+        .chat-option-btn {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            background: #0f1419;
+            border: 1px solid #2a3441;
+            color: #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .chat-option-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        #botResponse {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: #667eea;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.5em;
+        }
+        
         @media (max-width: 768px) {
-            .stocks-grid { grid-template-columns: 1fr; }
-            .add-holding-btn {
-                bottom: 20px;
-                right: 20px;
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .mobile-menu-toggle {
+                display: block;
+            }
+            .stocks-grid {
+                grid-template-columns: 1fr;
             }
         }
-        /* Table Styling for History Tab */
-.history-table-container {
-    padding: 30px;
-    overflow-x: auto;
-}
-
-.trade-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #252a3d;
-    border-radius: 12px;
-    overflow: hidden;
-    color: #e0e0e0;
-}
-
-.trade-table th {
-    background: #2d3447;
-    padding: 15px;
-    text-align: left;
-    font-weight: 600;
-    color: #8a92a6;
-    text-transform: uppercase;
-    font-size: 0.85em;
-    letter-spacing: 1px;
-}
-
-.trade-table td {
-    padding: 15px;
-    border-bottom: 1px solid #2d3447;
-}
-
-.trade-table tr:last-child td {
-    border-bottom: none;
-}
-
-.trade-table tr:hover {
-    background: rgba(92, 184, 92, 0.05);
-}
-
-.type-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.8em;
-    font-weight: bold;
-}
-
-.badge-buy { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
-.badge-sell { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
-
-.date-cell { color: #8a92a6; font-size: 0.9em; }
-
-.export-header {
-    display: flex;
-    justify-content: flex-end;
-    padding: 20px 30px;
-    background: #1a1d2e;
-    border-bottom: 2px solid #2d3447;
-}
-
-.export-btn {
-    padding: 12px 25px;
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.export-btn:hover {
-    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-}
-
-
-        /* Floating Chat Bubble Button */
-.chat-bubble-btn {
-    position: fixed;
-    bottom: 30px;
-    left: 30px; /* Opposite side of the Add button */
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 1.5em;
-    cursor: pointer;
-    box-shadow: 0 8px 16px rgba(52, 152, 219, 0.4);
-    transition: all 0.3s;
-    z-index: 999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.chat-bubble-btn:hover { transform: scale(1.1); }
-
-/* Option Buttons inside the Chat */
-.chat-option-btn {
-    width: 100%;
-    padding: 12px;
-    margin: 5px 0;
-    background: #252a3d;
-    border: 1px solid #2d3447;
-    color: #e0e0e0;
-    border-radius: 8px;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.2s;
-}
-.chat-option-btn:hover {
-    background: #5cb85c;
-    color: white;
-    border-color: #5cb85c;
-}
-
-     #botResponse {
-    white-space: pre-wrap; /* Keeps the line breaks from the AI */
-    word-wrap: break-word;
-    font-size: 14px;
-    color: #e0e0e0;
-    line-height: 1.6;
-}
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>📈 Stock Market Trading Platform</h1>
-        <p>Trade stocks and manage your portfolio</p>
-    </div>
-    <div class="nav-tabs">
-        <button class="nav-tab active" onclick="switchTab('stocks')">Trending Stocks</button>
-        <button class="nav-tab" onclick="switchTab('portfolio')">My Portfolio</button>
-        <button class="nav-tab" onclick="switchTab('history')">Trade History</button>
-    </div>
-
-    <div id="stocksTab" class="tab-content active">
-        <div class="search-container">
-            <div class="search-box">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search stocks...">
-                <button class="search-btn" onclick="searchStocks()">Search</button>
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+    
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <span>StockTrader</span>
             </div>
         </div>
-        <div id="stocksContainer"><div class="loading">Loading stocks...</div></div>
-    </div>
-
-    <div id="portfolioTab" class="tab-content">
-        <div id="portfolioContainer"><div class="loading">Loading portfolio...</div></div>
-    </div>
-
-    <div id="historyTab" class="tab-content">
-        <div class="export-header">
-            <button class="export-btn" onclick="exportTradesToPDF()">
-                <span>📄</span>
-                <span>Export to PDF</span>
-            </button>
-        </div>
-        <div id="historyContainer"><div class="loading">Loading trade history...</div></div>
-    </div>
-</div>
-
-<button class="add-holding-btn" id="addHoldingBtn" onclick="openAddHoldingModal()" title="Add Holding">+</button>
-
-<button class="chat-bubble-btn" onclick="toggleChat()">💬</button>
-<div id="chatModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;"> <div class="modal-header">
-        <div class="modal-title">AI Portfolio Advisor</div>
-        <button class="close-btn" onclick="toggleChat()">&times;</button>
-    </div>
-        <div class="modal-body">
-            <div id="botResponse" class="info-box" style="margin-bottom: 20px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;">
-                Hello! Click an option below to let Gemini AI analyze your data.
+        
+        <div class="sidebar-menu">
+            <div class="menu-item active" onclick="switchPage('dashboard')">
+                <span class="menu-icon"></span>
+                <span>Dashboard</span>
             </div>
-
-            <div id="chatOptions" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="menu-item" onclick="switchPage('trending')">
+                <span class="menu-icon"></span>
+                <span>Trending Stocks</span>
+            </div>
+            <div class="menu-item" onclick="switchPage('portfolio')">
+                <span class="menu-icon"></span>
+                <span>My Portfolio</span>
+            </div>
+            <div class="menu-item" onclick="switchPage('history')">
+                <span class="menu-icon"></span>
+                <span>Trade History</span>
+            </div>
+            <div class="menu-item" onclick="openChatModal()">
+                <span class="menu-icon"></span>
+                <span>AI Assistant</span>
+            </div>
+            <div class="menu-item" onclick="switchPage('news')">
+                <span class="menu-icon"></span>
+                <span>News & Announcements</span>
+            </div>
+            <div class="menu-item" onclick="switchPage('settings')">
+                <span class="menu-icon"></span>
+                <span>Settings</span>
             </div>
         </div>
-    </div>
-</div>
-
-<div id="addHoldingModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title">Add New Holding</div>
-            <button class="close-btn" onclick="closeAddHoldingModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="exchange-tabs">
-                <div class="exchange-tab active" onclick="selectExchange('NSE')" id="nseTab">NSE</div>
-                <div class="exchange-tab" onclick="selectExchange('BSE')" id="bseTab">BSE</div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Select Stock</label>
-                <select class="form-select" id="stockSelect">
-                    <option value="">Choose a stock...</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Purchase Price (₹)</label>
-                <input type="number" class="form-input" id="purchasePrice" placeholder="Enter price" step="0.01" min="0">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Quantity</label>
-                <input type="number" class="form-input" id="quantity" placeholder="Enter quantity" min="1">
-            </div>
-
-            <button class="submit-btn" onclick="addHolding()">Add to Portfolio</button>
-        </div>
-    </div>
-</div>
-
-<div id="removeHoldingModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <div class="modal-title">Remove Holding</div>
-            <button class="close-btn" onclick="closeRemoveHoldingModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="info-box">
-                <div class="info-row">
-                    <span class="info-label">Stock:</span>
-                    <span class="info-value" id="removeStockSymbol">-</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Company:</span>
-                    <span class="info-value" id="removeCompanyName">-</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Holdings:</span>
-                    <span class="info-value" id="removeCurrentQty">-</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Avg Purchase Price:</span>
-                    <span class="info-value" id="removeAvgPrice">-</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Current Price:</span>
-                    <span class="info-value" id="removeCurrentPrice">-</span>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">U</div>
+                <div>
+                    <div style="color: #ffffff; font-weight: 600;">User</div>
+                    <div style="font-size: 0.85em;">Portfolio Manager</div>
                 </div>
             </div>
-
-            <div class="quick-actions">
-                <button class="quick-btn" onclick="setRemoveQuantity(0.25)">25%</button>
-                <button class="quick-btn" onclick="setRemoveQuantity(0.5)">50%</button>
-                <button class="quick-btn" onclick="setRemoveQuantity(0.75)">75%</button>
-                <button class="quick-btn" onclick="setRemoveQuantity(1)">All</button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title" id="pageTitle">Dashboard</div>
+            <div class="top-actions">
+                <button class="action-btn btn-secondary" onclick="location.reload()">
+                    <span>🔄</span>
+                    <span>Refresh</span>
+                </button>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Quantity to Remove</label>
-                <div class="quantity-selector">
-                    <div class="quantity-controls">
-                        <button class="quantity-btn" onclick="decreaseRemoveQty()">−</button>
-                        <input type="number" class="quantity-input" id="removeQuantity" value="1" min="1" oninput="updateRemoveSummary()">
-                        <button class="quantity-btn" onclick="increaseRemoveQty()">+</button>
+        </div>
+        
+        <div class="content-area">
+            <!-- Dashboard Tab -->
+            <div id="dashboardPage" class="page-content active">
+                <iframe src="dashboard.html" style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 12px;"></iframe>
+            </div>
+            
+            <!-- Trending Stocks Tab -->
+            <div id="trendingPage" class="page-content" style="display: none;">
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search stocks...">
+                        <button class="search-btn" onclick="searchStocks()">Search</button>
+                    </div>
+                </div>
+                <div id="stocksContainer"><div class="loading">Loading stocks...</div></div>
+            </div>
+            
+            <!-- Portfolio Tab -->
+            <div id="portfolioPage" class="page-content" style="display: none;">
+                <div id="portfolioContainer"><div class="loading">Loading portfolio...</div></div>
+            </div>
+            
+            <!-- History Tab -->
+            <div id="historyPage" class="page-content" style="display: none;">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                    <button class="action-btn btn-primary" onclick="exportTradesToPDF()">
+                        <span>📄</span>
+                        <span>Export to PDF</span>
+                    </button>
+                </div>
+                <div id="historyContainer"><div class="loading">Loading trade history...</div></div>
+            </div>
+            
+            <!-- News Tab -->
+            <div id="newsPage" class="page-content" style="display: none;">
+                <div class="stocks-grid">
+                    <div class="stock-card">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">📰 Market News</h3>
+                        <p style="color: #8a92a6; line-height: 1.6;">
+                            Stay updated with the latest market trends, stock analysis, and financial news.
+                        </p>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #2a3441;">
+                            <p style="color: #8a92a6; font-size: 0.9em;">News integration coming soon...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stock-card">
+                        <h3 style="color: #667eea; margin-bottom: 15px;">📢 Announcements</h3>
+                        <p style="color: #8a92a6; line-height: 1.6;">
+                            Important updates and announcements about your trading platform.
+                        </p>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #2a3441;">
+                            <p style="color: #8a92a6; font-size: 0.9em;">No new announcements</p>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="info-box warning">
-                <div class="info-row">
-                    <span class="info-label">Removing:</span>
-                    <span class="info-value" id="removingQty">1 shares</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Value at Current Price:</span>
-                    <span class="info-value" id="removeValue">₹0.00</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Profit/Loss:</span>
-                    <span class="info-value" id="removePL">₹0.00</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Remaining:</span>
-                    <span class="info-value" id="remainingQty">- shares</span>
+            
+            <!-- Settings Tab -->
+            <div id="settingsPage" class="page-content" style="display: none;">
+                <div style="max-width: 800px;">
+                    <div class="stock-card" style="margin-bottom: 20px;">
+                        <h3 style="color: #667eea; margin-bottom: 20px; font-size: 1.5em;">🔑 API Configuration</h3>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Stock Market API Key</label>
+                            <input type="text" class="form-input" id="stockApiKey" 
+                                   placeholder="Enter your Stock API key (e.g., sk-live-xxx...)">
+                            <p style="color: #8a92a6; font-size: 0.85em; margin-top: 8px;">
+                                Get your API key from <a href="https://stock.indianapi.in" target="_blank" style="color: #667eea;">stock.indianapi.in</a>
+                            </p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Gemini AI API Key</label>
+                            <input type="text" class="form-input" id="geminiApiKey" 
+                                   placeholder="Enter your Gemini API key (e.g., AIzaSy...)">
+                            <p style="color: #8a92a6; font-size: 0.85em; margin-top: 8px;">
+                                Get your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: #667eea;">Google AI Studio</a>
+                            </p>
+                        </div>
+                        
+                        <button class="submit-btn" onclick="saveApiKeys()">
+                            Save API Keys
+                        </button>
+                    </div>
+                    
+                    <div class="stock-card">
+                        <h3 style="color: #667eea; margin-bottom: 20px; font-size: 1.5em;">⚙️ Preferences</h3>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Auto Refresh Interval</label>
+                            <select class="form-select" id="refreshInterval">
+                                <option value="30000">30 seconds</option>
+                                <option value="60000">1 minute</option>
+                                <option value="300000">5 minutes</option>
+                                <option value="0">Disabled</option>
+                            </select>
+                        </div>
+                        
+                        <button class="submit-btn" onclick="savePreferences()">
+                            Save Preferences
+                        </button>
+                    </div>
                 </div>
             </div>
-
-            <button class="submit-btn danger" onclick="executeRemove()">Remove from Portfolio</button>
         </div>
     </div>
-</div>
+    
+    <button class="add-holding-btn" id="addHoldingBtn" onclick="openAddHoldingModal()" title="Add Holding">+</button>
 
-<div id="toast" class="toast">
-    <span class="toast-icon" id="toastIcon"></span>
-    <span class="toast-message" id="toastMessage"></span>
-</div>
+    <!-- Modals (keeping all existing modals) -->
+    <div id="addHoldingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Add New Holding</div>
+                <button class="close-btn" onclick="closeAddHoldingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="exchange-tabs">
+                    <div class="exchange-tab active" onclick="selectExchange('NSE')" id="nseTab">NSE</div>
+                    <div class="exchange-tab" onclick="selectExchange('BSE')" id="bseTab">BSE</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Select Stock</label>
+                    <select class="form-select" id="stockSelect">
+                        <option value="">Choose a stock...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Purchase Price (₹)</label>
+                    <input type="number" class="form-input" id="purchasePrice" placeholder="Enter price" step="0.01" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" id="quantity" placeholder="Enter quantity" min="1">
+                </div>
+                
+                <button class="submit-btn" onclick="addHolding()">Add to Portfolio</button>
+            </div>
+        </div>
+    </div>
 
-<script src="app.js"></script>
-<!-- Dashboard Navigation Button - Auto-added by installation script -->
-<style>
-    .dashboard-float-btn {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 25px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        transition: all 0.3s;
-        z-index: 9999;
-        text-decoration: none;
-        display: inline-block;
-    }
-    .dashboard-float-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-</style>
-<a href="dashboard.html" class="dashboard-float-btn">📊 Dashboard</a>
-<!-- End Dashboard Navigation -->
+    <div id="removeHoldingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Remove Holding</div>
+                <button class="close-btn" onclick="closeRemoveHoldingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    <div class="info-row">
+                        <span class="info-label">Stock:</span>
+                        <span class="info-value" id="removeStockSymbol">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Company:</span>
+                        <span class="info-value" id="removeCompanyName">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Holdings:</span>
+                        <span class="info-value" id="removeCurrentQty">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Avg Purchase Price:</span>
+                        <span class="info-value" id="removeAvgPrice">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Current Price:</span>
+                        <span class="info-value" id="removeCurrentPrice">-</span>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="setRemoveQuantity(0.25)">25%</button>
+                    <button class="quick-btn" onclick="setRemoveQuantity(0.5)">50%</button>
+                    <button class="quick-btn" onclick="setRemoveQuantity(0.75)">75%</button>
+                    <button class="quick-btn" onclick="setRemoveQuantity(1)">All</button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Quantity to Remove</label>
+                    <div class="quantity-selector">
+                        <div class="quantity-controls">
+                            <button class="quantity-btn" onclick="decreaseRemoveQty()">−</button>
+                            <input type="number" class="quantity-input" id="removeQuantity" value="1" min="1" oninput="updateRemoveSummary()">
+                            <button class="quantity-btn" onclick="increaseRemoveQty()">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box warning">
+                    <div class="info-row">
+                        <span class="info-label">Removing:</span>
+                        <span class="info-value" id="removingQty">1 shares</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Value at Current Price:</span>
+                        <span class="info-value" id="removeValue">₹0.00</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Profit/Loss:</span>
+                        <span class="info-value" id="removePL">₹0.00</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Remaining:</span>
+                        <span class="info-value" id="remainingQty">- shares</span>
+                    </div>
+                </div>
+
+                <button class="submit-btn danger" onclick="executeRemove()">Remove from Portfolio</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chatModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <div class="modal-title">AI Portfolio Advisor</div>
+                <button class="close-btn" onclick="closeChatModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="botResponse" class="info-box" style="margin-bottom: 20px; max-height: 300px; overflow-y: auto;">
+                    Hello! Click an option below to let Gemini AI analyze your data.
+                </div>
+                <div id="chatOptions" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <span class="toast-icon" id="toastIcon"></span>
+        <span class="toast-message" id="toastMessage"></span>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>

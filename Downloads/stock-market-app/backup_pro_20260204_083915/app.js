@@ -1,15 +1,6 @@
-// API Configuration from localStorage
-function getApiKey(type) {
-    return localStorage.getItem(`${type}ApiKey`) || '';
-}
-
-function setApiKey(type, key) {
-    localStorage.setItem(`${type}ApiKey`, key);
-}
-
 const BACKEND_API = 'http://localhost:8080/api';
 let allStocks = [];
-let currentPage = 'dashboard';
+let currentTab = 'stocks';
 let selectedExchange = 'NSE';
 let marketData = { NSE: {}, BSE: {} };
 let currentRemoveHolding = null;
@@ -40,33 +31,15 @@ const BSE_STOCKS = [
     { "Company": "Vedanta", "Symbol": "VDAN.BO" }
 ];
 
-// Page Navigation
-function switchPage(page) {
-    currentPage = page;
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tab + 'Tab').classList.add('active');
     
-    // Update menu items
-    document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
-    event.target.closest('.menu-item').classList.add('active');
-    
-    // Hide all pages
-    document.querySelectorAll('.page-content').forEach(p => p.style.display = 'none');
-    
-    // Update page title and show content
-    const titles = {
-        'dashboard': 'Dashboard',
-        'trending': 'Trending Stocks',
-        'portfolio': 'My Portfolio',
-        'history': 'Trade History',
-        'news': 'News & Announcements',
-        'settings': 'Settings'
-    };
-    
-    document.getElementById('pageTitle').textContent = titles[page] || page;
-    document.getElementById(`${page}Page`).style.display = 'block';
-    
-    // Show/hide add button
     const addBtn = document.getElementById('addHoldingBtn');
-    if (page === 'portfolio') {
+    if (tab === 'portfolio') {
         addBtn.classList.add('show');
         loadPortfolio();
         fetchMarketData();
@@ -74,55 +47,7 @@ function switchPage(page) {
         addBtn.classList.remove('show');
     }
     
-    // Load page-specific data
-    if (page === 'trending') fetchStocks();
-    if (page === 'history') loadTradeHistory();
-    if (page === 'settings') loadSettings();
-    
-    // Close mobile menu
-    document.getElementById('sidebar').classList.remove('open');
-}
-
-function toggleMobileMenu() {
-    document.getElementById('sidebar').classList.toggle('open');
-}
-
-// Settings Functions
-function loadSettings() {
-    document.getElementById('stockApiKey').value = getApiKey('stock');
-    document.getElementById('geminiApiKey').value = getApiKey('gemini');
-    document.getElementById('refreshInterval').value = localStorage.getItem('refreshInterval') || '30000';
-}
-
-function saveApiKeys() {
-    const stockKey = document.getElementById('stockApiKey').value.trim();
-    const geminiKey = document.getElementById('geminiApiKey').value.trim();
-    
-    setApiKey('stock', stockKey);
-    setApiKey('gemini', geminiKey);
-    
-    showToast('success', 'API keys saved successfully');
-}
-
-function savePreferences() {
-    const interval = document.getElementById('refreshInterval').value;
-    localStorage.setItem('refreshInterval', interval);
-    
-    showToast('success', 'Preferences saved successfully');
-    
-    // Restart auto-refresh if enabled
-    if (window.refreshTimer) {
-        clearInterval(window.refreshTimer);
-    }
-    
-    if (interval !== '0') {
-        window.refreshTimer = setInterval(() => {
-            if (currentPage === 'portfolio') {
-                fetchMarketData();
-                loadPortfolio();
-            }
-        }, parseInt(interval));
-    }
+    if (tab === 'history') loadTradeHistory();
 }
 
 function selectExchange(exchange) {
@@ -328,21 +253,10 @@ async function executeRemove() {
 }
 
 async function fetchMarketData() {
-    const apiKey = getApiKey('stock');
-    if (!apiKey) {
-        console.warn('Stock API key not configured');
-        return;
-    }
-    
     try {
-        const headers = {
-            'X-Api-Key': apiKey,
-            'Content-Type': 'application/json'
-        };
-        
         const [nseResponse, bseResponse] = await Promise.all([
-            fetch('https://stock.indianapi.in/NSE_most_active', { headers }),
-            fetch('https://stock.indianapi.in/BSE_most_active', { headers })
+            fetch(`${BACKEND_API}/stocks/nse-active`),
+            fetch(`${BACKEND_API}/stocks/bse-active`)
         ]);
 
         if (nseResponse.ok) {
@@ -388,27 +302,12 @@ function calculateProfitLoss(purchasePrice, currentPrice, quantity) {
 }
 
 async function fetchStocks() {
-    const apiKey = getApiKey('stock');
-    if (!apiKey) {
-        document.getElementById('stocksContainer').innerHTML = 
-            '<div class="error">Please configure your Stock API key in Settings</div>';
-        return;
-    }
-    
     const container = document.getElementById('stocksContainer');
     container.innerHTML = '<div class="loading">Loading trending stocks...</div>';
-    
     try {
-        const response = await fetch('https://stock.indianapi.in/trending', {
-            headers: {
-                'X-Api-Key': apiKey,
-                'Content-Type': 'application/json'
-            }
-        });
-        
+        const response = await fetch(`${BACKEND_API}/stocks/trending`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        
         if (data && data.trending_stocks) {
             const topGainers = data.trending_stocks.top_gainers || [];
             const topLosers = data.trending_stocks.top_losers || [];
@@ -417,7 +316,7 @@ async function fetchStocks() {
         }
     } catch (error) {
         console.error('Error:', error);
-        container.innerHTML = `<div class="error">Failed to load stocks. Please check your API key in Settings.</div>`;
+        container.innerHTML = `<div class="error">Failed to load stocks.</div>`;
     }
 }
 
@@ -427,44 +326,19 @@ function displayStocks(stocks) {
         container.innerHTML = '<div class="no-results">No stocks found</div>';
         return;
     }
-    
-    const stocksHTML = stocks.map((stock, index) => {
-        const change = stock.net_change || 0;
-        const changePercent = stock.percent_change || 0;
-        const isPositive = change >= 0;
-        
-        return `
-            <div class="stock-card">
-                <div class="profit-indicator ${isPositive ? 'profit' : 'loss'}">
-                    ${isPositive ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(2)}%
-                </div>
-                <div class="stock-symbol">${stock.ticker_id || 'N/A'}</div>
-                <div class="stock-name">${stock.company_name || 'Unknown'}</div>
-                <div class="stock-price">₹${parseFloat(stock.price || 0).toFixed(2)}</div>
-                <div class="stock-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Change:</span>
-                        <span class="detail-value ${isPositive ? 'profit-value' : 'loss-value'}">
-                            ${isPositive ? '+' : ''}₹${change.toFixed(2)}
-                        </span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Volume:</span>
-                        <span class="detail-value">${stock.volume ? parseInt(stock.volume).toLocaleString() : 'N/A'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">High:</span>
-                        <span class="detail-value">₹${parseFloat(stock.high || 0).toFixed(2)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Low:</span>
-                        <span class="detail-value">₹${parseFloat(stock.low || 0).toFixed(2)}</span>
-                    </div>
+    const stocksHTML = stocks.map((stock, index) => `
+        <div class="stock-card">
+            <div class="stock-symbol">${stock.ticker_id || 'N/A'}</div>
+            <div class="stock-name">${stock.company_name || 'Unknown'}</div>
+            <div class="stock-price">₹${parseFloat(stock.price || 0).toFixed(2)}</div>
+            <div class="stock-details">
+                <div class="detail-row">
+                    <span class="detail-label">Volume:</span>
+                    <span class="detail-value">${stock.volume ? parseInt(stock.volume).toLocaleString() : 'N/A'}</span>
                 </div>
             </div>
-        `;
-    }).join('');
-    
+        </div>
+    `).join('');
     container.innerHTML = `<div class="stocks-grid">${stocksHTML}</div>`;
 }
 
@@ -568,6 +442,7 @@ async function loadTradeHistory() {
             return;
         }
 
+        // Sort trades by timestamp (newest first)
         const sortedTrades = trades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         const tableRows = sortedTrades.map(trade => {
@@ -623,6 +498,7 @@ async function loadTradeHistory() {
 
 async function exportTradesToPDF() {
     try {
+        // Fetch trade data
         const response = await fetch(`${BACKEND_API}/trades`);
         if (!response.ok) throw new Error('Failed to load trades');
         const trades = await response.json();
@@ -632,18 +508,24 @@ async function exportTradesToPDF() {
             return;
         }
 
+        // Sort trades by timestamp (newest first)
         const sortedTrades = trades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // Initialize jsPDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
+        // Add title
         doc.setFontSize(20);
         doc.setTextColor(40, 40, 40);
         doc.text('Trade History Report', 14, 22);
 
+        // Add generation date
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.text(`Generated on: ${new Date().toLocaleString('en-IN')}`, 14, 30);
 
+        // Calculate summary statistics
         const totalBuys = sortedTrades.filter(t => t.tradeType === 'BUY').length;
         const totalSells = sortedTrades.filter(t => t.tradeType === 'SELL').length;
         const totalBuyAmount = sortedTrades
@@ -653,6 +535,7 @@ async function exportTradesToPDF() {
             .filter(t => t.tradeType === 'SELL')
             .reduce((sum, t) => sum + t.totalAmount, 0);
 
+        // Add summary section
         doc.setFontSize(12);
         doc.setTextColor(40, 40, 40);
         doc.text('Summary:', 14, 40);
@@ -664,6 +547,7 @@ async function exportTradesToPDF() {
         doc.text(`Total Buy Amount: Rs. ${totalBuyAmount.toFixed(2)}`, 14, 65);
         doc.text(`Total Sell Amount: Rs. ${totalSellAmount.toFixed(2)}`, 14, 71);
 
+        // Prepare table data
         const tableData = sortedTrades.map(trade => {
             const tradeDate = new Date(trade.timestamp);
             const dateStr = tradeDate.toLocaleDateString('en-IN', {
@@ -686,6 +570,7 @@ async function exportTradesToPDF() {
             ];
         });
 
+        // Add table using autoTable plugin
         doc.autoTable({
             startY: 80,
             head: [['Date & Time', 'Stock', 'Type', 'Quantity', 'Price', 'Total Amount']],
@@ -711,6 +596,7 @@ async function exportTradesToPDF() {
                 5: { cellWidth: 30, halign: 'right' }
             },
             didParseCell: function(data) {
+                // Color code BUY and SELL
                 if (data.column.index === 2 && data.cell.section === 'body') {
                     if (data.cell.raw === 'BUY') {
                         data.cell.styles.textColor = [46, 204, 113];
@@ -724,6 +610,7 @@ async function exportTradesToPDF() {
             margin: { top: 80 }
         });
 
+        // Add footer with page numbers
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
@@ -737,6 +624,7 @@ async function exportTradesToPDF() {
             );
         }
 
+        // Save the PDF
         const filename = `Trade_History_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(filename);
 
@@ -755,27 +643,68 @@ function showToast(type, message) {
     setTimeout(() => toast.classList.remove('show'), 4000);
 }
 
-function openChatModal() {
-    document.getElementById('chatModal').classList.add('active');
-    askBot("GREETING");
+window.onclick = function(event) {
+    if (event.target.id === 'addHoldingModal') closeAddHoldingModal();
+    if (event.target.id === 'removeHoldingModal') closeRemoveHoldingModal();
 }
 
-function closeChatModal() {
-    document.getElementById('chatModal').classList.remove('active');
-}
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchStocks();
+    });
+    fetchStocks();
+});
 
-async function askBot(userChoice = "GREETING") {
-    const geminiKey = getApiKey('gemini');
-    if (!geminiKey) {
-        document.getElementById('botResponse').innerText = 
-            "Please configure your Gemini API key in Settings to use the AI Assistant.";
-        document.getElementById('chatOptions').innerHTML = "";
-        return;
+setInterval(() => {
+    if (currentTab === 'portfolio') {
+        fetchMarketData();
+        loadPortfolio();
     }
-    
+}, 30000);
+
+// --- CHATBOT LOGIC ---
+
+function toggleChat() {
+    const modal = document.getElementById('chatModal');
+    modal.classList.toggle('active');
+    if (modal.classList.contains('active')) {
+        askBot(""); // Load initial greeting and 4 options
+    }
+}
+
+/*
+async function askBot(userChoice = "") {
     const botResponseBox = document.getElementById('botResponse');
     const optionsContainer = document.getElementById('chatOptions');
 
+    try {
+        const response = await fetch(`${BACKEND_API}/chat/ask`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: userChoice // This sends the exact text of the button
+        });
+
+        const data = await response.json();
+        botResponseBox.innerText = data.botMessage;
+
+        optionsContainer.innerHTML = "";
+        data.options.forEach(optText => {
+            const btn = document.createElement('button');
+            btn.className = 'chat-option-btn'; // Use the class we defined in CSS
+            btn.innerText = optText;
+            btn.onclick = () => askBot(optText); // This triggers the logic above
+            optionsContainer.appendChild(btn);
+        });
+    } catch (error) {
+        console.error("Connection Error:", error);
+        botResponseBox.innerText = "Connection error. Ensure the backend is running.";
+    }
+}*/
+async function askBot(userChoice = "GREETING") {
+    const botResponseBox = document.getElementById('botResponse');
+    const optionsContainer = document.getElementById('chatOptions');
+
+    // Show a loading state while Gemini thinks
     if (userChoice !== "GREETING") {
         botResponseBox.innerHTML = "<i>Gemini is analyzing your portfolio... Please wait.</i>";
     }
@@ -789,12 +718,14 @@ async function askBot(userChoice = "GREETING") {
 
         const data = await response.json();
 
+        // 1. Update the Bot's message (Gemini response)
         botResponseBox.innerText = data.botMessage;
 
+        // 2. Clear and update buttons (Performance Analysis / Investment Suggestions)
         optionsContainer.innerHTML = "";
         data.options.forEach(optText => {
             const btn = document.createElement('button');
-            btn.className = 'chat-option-btn';
+            btn.className = 'chat-option-btn'; // Use your existing button style
             btn.style.width = "100%";
             btn.style.padding = "12px";
             btn.innerText = optText;
@@ -808,25 +739,11 @@ async function askBot(userChoice = "GREETING") {
     }
 }
 
-window.onclick = function(event) {
-    if (event.target.id === 'addHoldingModal') closeAddHoldingModal();
-    if (event.target.id === 'removeHoldingModal') closeRemoveHoldingModal();
-    if (event.target.id === 'chatModal') closeChatModal();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchStocks();
-    });
-    
-    // Initialize auto-refresh
-    const interval = localStorage.getItem('refreshInterval') || '30000';
-    if (interval !== '0') {
-        window.refreshTimer = setInterval(() => {
-            if (currentPage === 'portfolio') {
-                fetchMarketData();
-                loadPortfolio();
-            }
-        }, parseInt(interval));
+// Add this to your toggle function to start the chat
+function toggleChat() {
+    const modal = document.getElementById('chatModal');
+    modal.classList.toggle('active');
+    if (modal.classList.contains('active')) {
+        askBot("GREETING"); // Trigger the first AI menu
     }
-});
+}
