@@ -661,3 +661,89 @@ setInterval(() => {
         loadPortfolio();
     }
 }, 30000);
+
+// --- CHATBOT LOGIC ---
+
+function toggleChat() {
+    const modal = document.getElementById('chatModal');
+    modal.classList.toggle('active');
+    if (modal.classList.contains('active')) {
+        askBot(""); // Load initial greeting and 4 options
+    }
+}
+
+/*
+async function askBot(userChoice = "") {
+    const botResponseBox = document.getElementById('botResponse');
+    const optionsContainer = document.getElementById('chatOptions');
+
+    try {
+        const response = await fetch(`${BACKEND_API}/chat/ask`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: userChoice // This sends the exact text of the button
+        });
+
+        const data = await response.json();
+        botResponseBox.innerText = data.botMessage;
+
+        optionsContainer.innerHTML = "";
+        data.options.forEach(optText => {
+            const btn = document.createElement('button');
+            btn.className = 'chat-option-btn'; // Use the class we defined in CSS
+            btn.innerText = optText;
+            btn.onclick = () => askBot(optText); // This triggers the logic above
+            optionsContainer.appendChild(btn);
+        });
+    } catch (error) {
+        console.error("Connection Error:", error);
+        botResponseBox.innerText = "Connection error. Ensure the backend is running.";
+    }
+}*/
+async function askBot(userChoice = "GREETING") {
+    const botResponseBox = document.getElementById('botResponse');
+    const optionsContainer = document.getElementById('chatOptions');
+
+    // Show a loading state while Gemini thinks
+    if (userChoice !== "GREETING") {
+        botResponseBox.innerHTML = "<i>Gemini is analyzing your portfolio... Please wait.</i>";
+    }
+
+    try {
+        const response = await fetch(`${BACKEND_API}/chat/ask`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: userChoice
+        });
+
+        const data = await response.json();
+
+        // 1. Update the Bot's message (Gemini response)
+        botResponseBox.innerText = data.botMessage;
+
+        // 2. Clear and update buttons (Performance Analysis / Investment Suggestions)
+        optionsContainer.innerHTML = "";
+        data.options.forEach(optText => {
+            const btn = document.createElement('button');
+            btn.className = 'chat-option-btn'; // Use your existing button style
+            btn.style.width = "100%";
+            btn.style.padding = "12px";
+            btn.innerText = optText;
+            btn.onclick = () => askBot(optText);
+            optionsContainer.appendChild(btn);
+        });
+
+    } catch (error) {
+        console.error('Chat Error:', error);
+        botResponseBox.innerText = "Error connecting to AI Assistant. Is the backend running?";
+    }
+}
+
+// Add this to your toggle function to start the chat
+function toggleChat() {
+    const modal = document.getElementById('chatModal');
+    modal.classList.toggle('active');
+    if (modal.classList.contains('active')) {
+        askBot("GREETING"); // Trigger the first AI menu
+    }
+}
