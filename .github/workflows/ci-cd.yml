@@ -59,8 +59,13 @@ jobs:
       run: |
         echo "## Test Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        if [ -f target/surefire-reports/TEST-*.xml ]; then
+        if ls target/surefire-reports/TEST-*.xml 1> /dev/null 2>&1; then
           echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Statistics:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -h "tests=" target/surefire-reports/TEST-*.xml | head -1 || echo "Test count unavailable"
+          echo '```' >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ Test execution failed" >> $GITHUB_STEP_SUMMARY
         fi
