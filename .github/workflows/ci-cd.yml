@@ -61,10 +61,9 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         if ls target/surefire-reports/TEST-*.xml 1> /dev/null 2>&1; then
           echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Extract and display test statistics from Maven output
-          
+        else
+          echo "❌ Test execution failed" >> $GITHUB_STEP_SUMMARY
+        fi
     
     - name: Upload test results
       if: always()
