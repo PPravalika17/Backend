@@ -1,0 +1,136 @@
+package com.stockmarket.controller;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/news")
+@CrossOrigin(origins = "*")
+public class NewsController {
+    
+    private final RestTemplate restTemplate;
+    
+    @Value("${stock.api.news.url:https://stock.indianapi.in/news}")
+    private String newsApiUrl;
+    
+    @Value("${stock.api.key}")
+    private String apiKey;
+    
+    public NewsController(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+    
+    @GetMapping
+    public ResponseEntity<?> getNews() {
+        try {
+            HttpHeaders headers = createHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            System.out.println("Fetching news from: " + newsApiUrl);
+            
+            ResponseEntity<Map> response = restTemplate.exchange(
+                newsApiUrl, HttpMethod.GET, entity, Map.class
+            );
+            
+            System.out.println("News response: " + response.getBody());
+            return ResponseEntity.ok(response.getBody());
+            
+        } catch (Exception e) {
+            System.err.println("Error fetching news: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(getMockNewsData());
+        }
+    }
+    
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Api-Key", apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Accept", "application/json");
+        return headers;
+    }
+    
+    private Map<String, Object> getMockNewsData() {
+        Map<String, Object> response = new HashMap<>();
+        
+        Object[] newsArticles = new Object[] {
+            createNewsArticle(
+                "Markets Rally on Positive Economic Data",
+                "Indian stock markets witnessed a strong rally today as key economic indicators showed robust growth.",
+                "Economic Times",
+                "2026-02-04T09:30:00",
+                "https://economictimes.indiatimes.com"
+            ),
+            createNewsArticle(
+                "IT Stocks Lead Market Surge",
+                "IT sector stocks led the market rally with TCS, Infosys, and Wipro recording gains of over 3%.",
+                "Business Standard",
+                "2026-02-04T10:15:00",
+                "https://business-standard.com"
+            ),
+            createNewsArticle(
+                "RBI Maintains Repo Rate at 6.5 Percent",
+                "The Reserve Bank of India kept the repo rate unchanged at 6.5% in its latest monetary policy meeting.",
+                "Mint",
+                "2026-02-04T11:00:00",
+                "https://livemint.com"
+            ),
+            createNewsArticle(
+                "Foreign Investors Pour Rs 5,000 Crore into Markets",
+                "Foreign institutional investors invested Rs 5,000 crore in Indian equities this week.",
+                "Moneycontrol",
+                "2026-02-04T12:30:00",
+                "https://moneycontrol.com"
+            ),
+            createNewsArticle(
+                "Banking Stocks Under Pressure",
+                "Banking sector stocks faced selling pressure as concerns over NPAs emerged.",
+                "Financial Express",
+                "2026-02-04T13:45:00",
+                "https://financialexpress.com"
+            ),
+            createNewsArticle(
+                "Auto Sector Shows Strong Recovery",
+                "Automobile stocks rallied on the back of strong monthly sales data.",
+                "Bloomberg Quint",
+                "2026-02-04T14:20:00",
+                "https://bloombergquint.com"
+            ),
+            createNewsArticle(
+                "SEBI Introduces New Mutual Fund Norms",
+                "SEBI announced new regulations for mutual funds aimed at enhancing investor protection.",
+                "Hindu BusinessLine",
+                "2026-02-04T15:00:00",
+                "https://thehindubusinessline.com"
+            ),
+            createNewsArticle(
+                "Renewable Energy Stocks Gain Momentum",
+                "Renewable energy stocks witnessed strong buying following new solar power initiatives.",
+                "Reuters India",
+                "2026-02-04T15:30:00",
+                "https://reuters.com"
+            )
+        };
+        
+        response.put("news", newsArticles);
+        
+        System.out.println("Returning mock news data");
+        return response;
+    }
+    
+    private Map<String, Object> createNewsArticle(String title, String description, 
+                                                   String source, String publishedAt, String url) {
+        Map<String, Object> article = new HashMap<>();
+        article.put("title", title);
+        article.put("description", description);
+        article.put("source", source);
+        article.put("published_at", publishedAt);
+        article.put("url", url);
+        return article;
+    }
+}

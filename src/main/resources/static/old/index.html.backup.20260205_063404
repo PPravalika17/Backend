@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Market Trading Platform</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1d2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Vertical Navigation Bar */
+        .vertical-nav {
+            width: 250px;
+            background: #1a1d2e;
+            border-right: 2px solid #2d3447;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-header {
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #1a1d2e 0%, #1a1d2e 100%);
+            border-bottom: 2px solid #2d3447;
+        }
+
+        .nav-header h1 {
+            color: #5cb85c;
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .nav-header p {
+            color: #8a92a6;
+            font-size: 0.85em;
+        }
+
+        .nav-items {
+            flex: 1;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 18px 25px;
+            color: #8a92a6;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+            font-size: 1em;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: #252a3d;
+            color: #ffffff;
+            border-left-color: #5cb85c;
+        }
+
+        .nav-item.active {
+            background: #252a3d;
+            color: #5cb85c;
+            border-left-color: #5cb85c;
+        }
+
+        .nav-item-icon {
+            font-size: 1.3em;
+            margin-right: 15px;
+            width: 25px;
+            text-align: center;
+        }
+
+        .nav-footer {
+            padding: 20px;
+            border-top: 2px solid #2d3447;
+            background: #252a3d;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            color: #8a92a6;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .content-header {
+            background: #1a1d2e;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #2d3447;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .content-header h1 {
+            color: #ffffff;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .content-header p {
+            color: #8a92a6;
+            font-size: 1em;
+        }
+
+        .search-container {
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            max-width: 600px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #2d3447;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+            background: #252a3d;
+            color: #e0e0e0;
+        }
+
+        .search-input:focus {
+            border-color: #5cb85c;
+            box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.2);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #4cae4c;
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #5cb85c;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #dc3545;
+            font-size: 1.1em;
+        }
+
+        /* Stock Cards Grid */
+        .stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .stock-card {
+            background: #252a3d;
+            border: 2px solid #2d3447;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(92, 184, 92, 0.2);
+            border-color: #5cb85c;
+        }
+
+        .stock-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #5cb85c 0%, #4cae4c 100%);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .stock-symbol {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #5cb85c;
+        }
+
+        .stock-exchange {
+            padding: 4px 10px;
+            background: rgba(92, 184, 92, 0.2);
+            border-radius: 12px;
+            font-size: 0.75em;
+            color: #5cb85c;
+            font-weight: bold;
+        }
+
+        .stock-name {
+            color: #8a92a6;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .stock-price-section {
+            margin-bottom: 15px;
+        }
+
+        .stock-price {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        .price-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+
+        .price-change.positive {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+
+        .price-change.negative {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        .price-change.neutral {
+            background: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+        }
+
+        .stock-details {
+            border-top: 1px solid #2d3447;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.95em;
+        }
+
+        .detail-label {
+            color: #8a92a6;
+        }
+
+        .detail-value {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .profit-value {
+            color: #2ecc71;
+        }
+
+        .loss-value {
+            color: #e74c3c;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 80px 20px;
+            color: #8a92a6;
+        }
+
+        .no-results-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        /* Remove Stock Button */
+        .remove-stock-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .remove-stock-btn:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        /* Floating Action Buttons */
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 999;
+        }
+
+        .fab {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        .fab-add {
+            background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+        }
+
+        .fab-chat {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .fab.show {
+            display: flex;
+        }
+
+        .fab.hide {
+            display: none;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: #1a1d2e;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: #252a3d;
+            color: white;
+            padding: 25px 30px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2d3447;
+        }
+
+        .modal-title { 
+            font-size: 1.8em; 
+            font-weight: bold; 
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .close-btn:hover { 
+            background: rgba(255, 255, 255, 0.3); 
+        }
+
+        .modal-body { 
+            padding: 30px; 
+            background: #1a1d2e; 
+        }
+
+        /* Remove Stock Modal Specific Styles */
+        .confirmation-section {
+            margin-bottom: 25px;
+        }
+
+        .stock-info-box {
+            background: #252a3d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2d3447;
+        }
+
+        .stock-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #2d3447;
+        }
+
+        .stock-info-title {
+            font-size: 1.3em;
+            color: #5cb85c;
+            font-weight: bold;
+        }
+
+        .stock-info-exchange {
+            padding: 4px 12px;
+            background: rgba(92, 184, 92, 0.2);
+            border-radius: 12px;
+            font-size: 0.8em;
+            color: #5cb85c;
+            font-weight: bold;
+        }
+
+        .stock-info-name {
+            color: #8a92a6;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .calculation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .calc-item {
+            background: #1a1d2e;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #2d3447;
+        }
+
+        .calc-label {
+            color: #8a92a6;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .calc-value {
+            color: #ffffff;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .profit-loss-box {
+            background: #252a3d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid;
+        }
+
+        .profit-loss-box.profit {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .profit-loss-box.loss {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .pl-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .pl-icon {
+            font-size: 2em;
+        }
+
+        .pl-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .pl-amount {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .pl-percentage {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .profit-color {
+            color: #2ecc71;
+        }
+
+        .loss-color {
+            color: #e74c3c;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel {
+            background: #2d3447;
+            color: #8a92a6;
+        }
+
+        .btn-cancel:hover {
+            background: #3a4256;
+            color: #ffffff;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            color: #8a92a6;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            background: #252a3d;
+            border: 2px solid #2d3447;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 1em;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: #5cb85c;
+            box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.2);
+        }
+
+        .exchange-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .exchange-tab {
+            flex: 1;
+            padding: 12px;
+            background: #252a3d;
+            border: 2px solid #2d3447;
+            border-radius: 8px;
+            color: #8a92a6;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .exchange-tab.active {
+            background: rgba(92, 184, 92, 0.2);
+            border-color: #5cb85c;
+            color: #5cb85c;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #252a3d;
+            padding: 20px 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 2000;
+            min-width: 300px;
+            color: #ffffff;
+        }
+
+        .toast.show { 
+            display: flex; 
+            animation: slideInRight 0.3s ease-out; 
+        }
+
+        .toast.success { 
+            border-left: 5px solid #5cb85c; 
+        }
+        
+        .toast.error { 
+            border-left: 5px solid #e74c3c; 
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* Performance Badge */
+        .performance-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .performance-badge.high-gainer {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .performance-badge.high-loser {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .performance-badge.most-active {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+            border: 1px solid #3498db;
+        }
+
+        /* Trade History Table Styles */
+        .history-table-container {
+            background: #252a3d;
+            border: 2px solid #2d3447;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table thead {
+            background: linear-gradient(135deg, #2d3447 0%, #252a3d 100%);
+        }
+
+        .history-table th {
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #5cb85c;
+            font-size: 0.95em;
+            border-bottom: 2px solid #2d3447;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-table th:last-child {
+            text-align: center;
+        }
+
+        .history-table tbody tr {
+            transition: all 0.2s;
+            border-bottom: 1px solid #2d3447;
+        }
+
+        .history-table tbody tr:hover {
+            background: #2d3447;
+            transform: scale(1.01);
+        }
+
+        .history-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .history-table td {
+            padding: 16px 15px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        .trade-type-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .trade-type-badge.buy {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .trade-type-badge.sell {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .stock-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stock-symbol {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 1em;
+        }
+
+        .company-name {
+            color: #8a92a6;
+            font-size: 0.85em;
+        }
+
+        .date-time-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .trade-date {
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .trade-time {
+            color: #8a92a6;
+            font-size: 0.85em;
+        }
+
+        .amount-value {
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+
+        .no-trades {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8a92a6;
+        }
+
+        .no-trades-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .no-trades-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #e0e0e0;
+        }
+
+        .no-trades-subtext {
+            font-size: 0.95em;
+        }
+
+        /* Sell Stock Modal Styles */
+        .quantity-selector {
+            margin: 20px 0;
+        }
+
+        .quantity-input-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .quantity-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 8px;
+            border: 2px solid #2d3447;
+            background: #252a3d;
+            color: #5cb85c;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background: #2d3447;
+            border-color: #5cb85c;
+            transform: scale(1.05);
+        }
+
+        .quantity-btn:active {
+            transform: scale(0.95);
+        }
+
+        .quantity-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #2d3447;
+            border-radius: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            font-weight: 600;
+            outline: none;
+            transition: all 0.3s;
+            background: #252a3d;
+            color: #e0e0e0;
+        }
+
+        .quantity-input:focus {
+            border-color: #5cb85c;
+            box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.2);
+        }
+
+        .quantity-range {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #2d3447;
+            outline: none;
+            margin-top: 15px;
+            -webkit-appearance: none;
+        }
+
+        .quantity-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5cb85c;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quantity-range::-webkit-slider-thumb:hover {
+            background: #4cae4c;
+            transform: scale(1.2);
+        }
+
+        .quantity-range::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5cb85c;
+            cursor: pointer;
+            border: none;
+        }
+
+        .quantity-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .preset-btn {
+            padding: 10px;
+            border: 2px solid #2d3447;
+            border-radius: 8px;
+            background: #252a3d;
+            color: #8a92a6;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            background: #2d3447;
+            color: #5cb85c;
+            border-color: #5cb85c;
+        }
+
+        .calculation-summary {
+            background: #1a1d2e;
+            border: 2px solid #2d3447;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #2d3447;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            padding-top: 15px;
+            margin-top: 10px;
+            border-top: 2px solid #2d3447;
+        }
+
+        .summary-label {
+            color: #8a92a6;
+            font-size: 0.95em;
+        }
+
+        .summary-value {
+            color: #e0e0e0;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .summary-value.highlight {
+            color: #5cb85c;
+            font-size: 1.2em;
+        }
+
+        .summary-value.profit {
+            color: #2ecc71;
+        }
+
+        .summary-value.loss {
+            color: #e74c3c;
+        }
+
+        .warning-message {
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid #f1c40f;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            color: #f1c40f;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .warning-icon {
+            font-size: 1.5em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .vertical-nav {
+                width: 70px;
+            }
+
+            .nav-header h1,
+            .nav-header p,
+            .nav-item span,
+            .user-info span {
+                display: none;
+            }
+
+            .nav-item {
+                justify-content: center;
+                padding: 18px;
+            }
+
+            .nav-item-icon {
+                margin-right: 0;
+            }
+
+            .main-content {
+                margin-left: 70px;
+            }
+
+            .stocks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .calculation-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* Chat Modal Styles */
+        #chatModal {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 480px;
+            height: 100vh;
+            background: #1a1d2e;
+            border-left: 2px solid #2d3447;
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
+            transition: right 0.3s ease;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chatModal.active {
+            right: 0;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2d3447;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .chat-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: #252a3d;
+        }
+
+        .chat-response-container {
+            margin-bottom: 25px;
+        }
+
+        .chat-label {
+            color: #8a92a6;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #botResponse {
+            background: #1a1d2e;
+            border: 2px solid #2d3447;
+            border-radius: 12px;
+            padding: 20px;
+            color: #e0e0e0;
+            line-height: 1.8;
+            min-height: 120px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .bot-message-content {
+            font-size: 0.95em;
+        }
+
+        .ai-thinking {
+            color: #3498db;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .error-message {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e74c3c;
+        }
+
+        #chatOptions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-option-btn {
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-option-btn:before {
+            content: '▶';
+            font-size: 0.8em;
+        }
+
+        .chat-option-btn:hover {
+            background: linear-gradient(135deg, #4cae4c 0%, #449d44 100%);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(92, 184, 92, 0.3);
+        }
+
+        .chat-option-btn:active {
+            transform: translateX(3px);
+        }
+
+        .chat-powered-by {
+            padding: 15px 25px;
+            background: #1a1d2e;
+            border-top: 2px solid #2d3447;
+            text-align: center;
+            color: #8a92a6;
+            font-size: 0.85em;
+        }
+
+        .chat-powered-by span {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            #chatModal {
+                width: 100%;
+                right: -100%;
+            }
+        }
+
+        #botResponse::-webkit-scrollbar,
+        .chat-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #botResponse::-webkit-scrollbar-track,
+        .chat-body::-webkit-scrollbar-track {
+            background: #1a1d2e;
+            border-radius: 10px;
+        }
+
+        #botResponse::-webkit-scrollbar-thumb,
+        .chat-body::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 10px;
+        }
+
+        #botResponse::-webkit-scrollbar-thumb:hover,
+        .chat-body::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+
+        /* Import/Export Buttons */
+        .portfolio-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-import {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            color: white;
+        }
+
+        .btn-import:hover {
+            background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(155, 89, 182, 0.3);
+        }
+
+        /* Import Modal Specific Styles */
+        .import-info-box {
+            background: rgba(52, 152, 219, 0.1);
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .import-info-title {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .import-format-list {
+            color: #e0e0e0;
+            line-height: 2;
+            margin-left: 20px;
+        }
+
+        .import-format-list li {
+            margin: 8px 0;
+        }
+
+        .import-format-list code {
+            background: #1a1d2e;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #5cb85c;
+            font-family: 'Courier New', monospace;
+        }
+
+        .warning-box {
+            background: rgba(241, 196, 15, 0.1);
+            border: 2px solid #f1c40f;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #f1c40f;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .warning-icon {
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 40px 20px;
+            background: #252a3d;
+            border: 2px dashed #2d3447;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            border-color: #5cb85c;
+            background: #2d3447;
+        }
+
+        .file-input-label.has-file {
+            border-color: #5cb85c;
+            background: rgba(92, 184, 92, 0.1);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-text {
+            color: #8a92a6;
+            font-size: 1em;
+        }
+
+        .file-input-text.has-file {
+            color: #5cb85c;
+            font-weight: 600;
+        }
+
+        .file-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .sample-download-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #2d3447;
+            color: #3498db;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .sample-download-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        #importMessage {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .import-success {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .import-error {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .import-loading {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid #3498db;
+            color: #3498db;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .import-warnings {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid #f1c40f;
+            color: #f1c40f;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .import-warnings ul {
+            margin-top: 8px;
+            margin-left: 20px;
+        }
+
+        .import-warnings li {
+            margin: 5px 0;
+        }
+
+        .import-error-details {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(231, 76, 60, 0.05);
+            border-radius: 8px;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .import-error-details ul {
+            margin-top: 8px;
+            margin-left: 20px;
+        }
+
+        .import-error-details li {
+            margin: 5px 0;
+        }
+
+        
+
+        .import-loading {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid #3498db;
+            color: #3498db;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .import-warnings {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(241, 196, 15, 0.1);
+            border: 1px solid #f1c40f;
+            color: #f1c40f;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .import-warnings ul {
+            margin-top: 8px;
+            margin-left: 20px;
+        }
+
+        .import-warnings li {
+            margin: 5px 0;
+        }
+
+        .import-error-details {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(231, 76, 60, 0.05);
+            border-radius: 8px;
+            font-size: 0.9em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .import-error-details ul {
+            margin-top: 8px;
+            margin-left: 20px;
+        }
+
+        .import-error-details li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Vertical Navigation -->
+    <nav class="vertical-nav">
+        <div class="nav-header">
+            <h1>📈 StockPro</h1>
+            <p>Trading Platform</p>
+        </div>
+
+        <div class="nav-items">
+            <div class="nav-item active" onclick="switchTab('trending')">
+                <span class="nav-item-icon">🔥</span>
+                <span>Trending</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('portfolio')">
+                <span class="nav-item-icon">💼</span>
+                <span>Portfolio</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('history')">
+                <span class="nav-item-icon">📜</span>
+                <span>Trade History</span>
+            </div>
+<div class="nav-items">
+<div class="nav-item" onclick="switchTab('news')">
+       <span class="nav-item-icon">&#128240;</span>
+       <span>News & Announcements</span>
+   </div>
+            <a href="dashboard.html" class="nav-item">
+                <span class="nav-item-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+        </div>
+
+        <div class="nav-footer">
+            <div class="user-info">
+                <div class="user-avatar">U</div>
+                <span>Trader</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Trending Tab -->
+        <div id="trendingTab" class="tab-content active">
+            <div class="content-header">
+                <h1>🔥 Trending Stocks</h1>
+                <p>Live market data from Indian stock exchanges</p>
+            </div>
+
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search stocks by symbol or company name...">
+                    <button class="search-btn" onclick="searchStocks()">Search</button>
+                </div>
+            </div>
+
+            <div id="stocksContainer">
+                <div class="loading">Loading trending stocks...</div>
+            </div>
+        </div>
+
+        <!-- Portfolio Tab -->
+        <div id="portfolioTab" class="tab-content">
+            <div class="content-header">
+                <h1>💼 My Portfolio</h1>
+                <p>Your stock holdings and performance</p>
+            </div>
+
+            
+
+            <div class="portfolio-actions">
+                <button class="action-btn btn-export" onclick="exportPortfolio()">
+                    <span>📤</span> Export Portfolio
+                </button>
+                <button class="action-btn btn-import" onclick="openImportPortfolioModal()">
+                    <span>📥</span> Import Portfolio
+                </button>
+            </div>
+
+            <div id="portfolioContainer">
+                <div class="loading">Loading portfolio...</div>
+            </div>
+        </div>
+
+        <!-- Trade History Tab -->
+        <div id="historyTab" class="tab-content">
+            <div class="content-header">
+                <h1>📜 Trade History</h1>
+                <p>Your complete trading activity</p>
+            </div>
+
+            <div class="search-container">
+                <button class="search-btn" onclick="exportTradesToPDF()" style="margin-left: auto; display: block;">
+                    📄 Export to PDF
+                </button>
+            </div>
+
+            <div id="historyContainer">
+                <div class="loading">Loading trade history...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+        <button class="fab fab-add hide" id="fabAdd" onclick="openAddHoldingModal()" title="Add Holding">+</button>
+        <button class="fab fab-chat" onclick="toggleChat()" title="AI Advisor">💬</button>
+    </div>
+
+    <!-- Add Holding Modal -->
+    <div id="addHoldingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Stock to Portfolio</h2>
+                <button class="close-btn" onclick="closeAddHoldingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault(); addHolding();">
+                    <div class="form-group">
+                        <label class="form-label">Exchange</label>
+                        <div class="exchange-tabs">
+                            <div class="exchange-tab active" id="nseTab" onclick="selectExchange('NSE')">NSE</div>
+                            <div class="exchange-tab" id="bseTab" onclick="selectExchange('BSE')">BSE</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="stockSelect">Select Stock</label>
+                        <select id="stockSelect" class="form-select" required>
+                            <option value="">Choose a stock...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="purchasePrice">Purchase Price (₹)</label>
+                        <input type="number" id="purchasePrice" class="form-input" step="0.01" min="0.01" placeholder="Enter purchase price" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="quantity">Quantity</label>
+                        <input type="number" id="quantity" class="form-input" min="1" placeholder="Enter quantity" required>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeAddHoldingModal()">Cancel</button>
+                        <button type="submit" class="btn btn-confirm" style="background: linear-gradient(135deg, #5cb85c 0%, #4cae4c 100%);">Add to Portfolio</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove/Sell Stock Modal -->
+    <div id="removeStockModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Sell Stock from Portfolio</h2>
+                <button class="close-btn" onclick="closeRemoveStockModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirmation-section">
+                    <div class="stock-info-box">
+                        <div class="stock-info-header">
+                            <div class="stock-info-title" id="removeStockSymbol"></div>
+                            <div class="stock-info-exchange" id="removeStockExchange"></div>
+                        </div>
+                        <div class="stock-info-name" id="removeStockName"></div>
+                        
+                        <div class="calculation-grid">
+                            <div class="calc-item">
+                                <div class="calc-label">Available Quantity</div>
+                                <div class="calc-value" id="removeStockQuantity"></div>
+                            </div>
+                            <div class="calc-item">
+                                <div class="calc-label">Purchase Price</div>
+                                <div class="calc-value" id="removeStockPurchasePrice"></div>
+                            </div>
+                            <div class="calc-item">
+                                <div class="calc-label">Current Price</div>
+                                <div class="calc-value" id="removeStockCurrentPrice"></div>
+                            </div>
+                            <div class="calc-item">
+                                <div class="calc-label">Total Invested</div>
+                                <div class="calc-value" id="removeStockInvested"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="quantity-selector">
+                        <label class="form-label">Select Quantity to Sell</label>
+                        <div class="quantity-input-group">
+                            <button class="quantity-btn" onclick="decreaseQuantity()">−</button>
+                            <input type="number" 
+                                   id="sellQuantity" 
+                                   class="quantity-input" 
+                                   min="1" 
+                                   value="1"
+                                   oninput="updateSellCalculations()">
+                            <button class="quantity-btn" onclick="increaseQuantity()">+</button>
+                        </div>
+                        
+                        <input type="range" 
+                               id="quantitySlider" 
+                               class="quantity-range" 
+                               min="1" 
+                               value="1"
+                               oninput="updateQuantityFromSlider()">
+                        
+                        <div class="quantity-presets">
+                            <button class="preset-btn" onclick="setQuantityPreset(25)">25%</button>
+                            <button class="preset-btn" onclick="setQuantityPreset(50)">50%</button>
+                            <button class="preset-btn" onclick="setQuantityPreset(75)">75%</button>
+                            <button class="preset-btn" onclick="setQuantityPreset(100)">100%</button>
+                        </div>
+                    </div>
+
+                    <!-- Calculation Summary -->
+                    <div class="calculation-summary">
+                        <div class="summary-row">
+                            <span class="summary-label">Selling Quantity:</span>
+                            <span class="summary-value" id="summaryQuantity">0</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Sale Price per Share:</span>
+                            <span class="summary-value" id="summarySalePrice">₹0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Total Sale Amount:</span>
+                            <span class="summary-value highlight" id="summaryTotalSale">₹0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Total Cost:</span>
+                            <span class="summary-value" id="summaryTotalCost">₹0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">Profit/Loss:</span>
+                            <span class="summary-value" id="summaryProfitLoss">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <div id="warningMessage" style="display: none;" class="warning-message">
+                        <span class="warning-icon">⚠️</span>
+                        <span>You are selling all your shares. This stock will be removed from your portfolio.</span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-cancel" onclick="closeRemoveStockModal()">Cancel</button>
+                    <button class="btn btn-confirm" onclick="confirmSellStock()">
+                        Confirm Sale
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span class="toast-icon" id="toastIcon"></span>
+        <span class="toast-message" id="toastMessage"></span>
+    </div>
+
+    <script src="app.js"></script>
+    <!-- AI Chat Modal -->
+    <div id="chatModal">
+        <div class="chat-header">
+            <h2>🤖 AI Portfolio Advisor</h2>
+            <button class="chat-close-btn" onclick="toggleChat()">&times;</button>
+        </div>
+        
+        <div class="chat-body">
+            <div class="chat-response-container">
+                <div class="chat-label">AI Response</div>
+                <div id="botResponse">
+                    <div class="ai-thinking">👋 Click an option below to get started...</div>
+                </div>
+            </div>
+
+            <div class="chat-response-container">
+                <div class="chat-label">Choose an Action</div>
+                <div id="chatOptions">
+                    <!-- Options will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-powered-by">
+            Powered by <span>Google Gemini AI</span>
+        </div>
+    </div>
+
+    <!-- Import Portfolio Modal -->
+    <div id="importPortfolioModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📥 Import Portfolio</h2>
+                <button class="close-btn" onclick="closeImportPortfolioModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-info-box">
+                    <div class="import-info-title">📋 CSV Format Requirements</div>
+                    <ul class="import-format-list">
+                        <li><strong>Header:</strong> <code>EXCHANGE,SYMBOL,NAME,QUANTITY,PRICE,TIMESTAMP</code></li>
+                        <li><strong>EXCHANGE:</strong> Must be either <code>NSE</code> or <code>BSE</code></li>
+                        <li><strong>SYMBOL:</strong> Stock ticker symbol (e.g., RELIANCE.NS, TCS.BO)</li>
+                        <li><strong>NAME:</strong> Company name (use quotes if contains commas)</li>
+                        <li><strong>QUANTITY:</strong> Number of shares (positive integer)</li>
+                        <li><strong>PRICE:</strong> Purchase price per share (positive decimal)</li>
+                        <li><strong>TIMESTAMP:</strong> ISO format (e.g., 2026-02-04T10:30:00)</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <span class="warning-icon">⚠️</span>
+                    <div>
+                        <strong>Important:</strong> The CSV file must have exactly these columns in this order. 
+                        Any format mismatch will result in an error. Existing portfolio entries will be updated 
+                        (quantities added, prices averaged).
+                    </div>
+                </div>
+
+                <div class="file-input-wrapper">
+                    <label for="portfolioFileInput" class="file-input-label" id="fileInputLabel">
+                        <div class="file-icon">📄</div>
+                        <div class="file-input-text" id="fileInputText">
+                            Click to select CSV file or drag and drop here
+                        </div>
+                    </label>
+                    <input type="file" 
+                           id="portfolioFileInput" 
+                           class="file-input" 
+                           accept=".csv"
+                           onchange="handleFileSelect(this)">
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="sample-download-btn" onclick="downloadSampleCSV()">
+                        📥 Download Sample CSV Template
+                    </button>
+                </div>
+
+                <div id="importMessage"></div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-cancel" onclick="closeImportPortfolioModal()">Cancel</button>
+                    <button class="btn btn-confirm" 
+                            style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);"
+                            onclick="importPortfolio()">
+                        Import Portfolio
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleFileSelect(input) {
+            const label = document.getElementById('fileInputLabel');
+            const text = document.getElementById('fileInputText');
+            
+            if (input.files && input.files.length > 0) {
+                const fileName = input.files[0].name;
+                text.textContent = `Selected: ${fileName}`;
+                text.classList.add('has-file');
+                label.classList.add('has-file');
+            } else {
+                text.textContent = 'Click to select CSV file or drag and drop here';
+                text.classList.remove('has-file');
+                label.classList.remove('has-file');
+            }
+        }
+    </script>
+
+    <!-- Import Portfolio Modal -->
+    <div id="importPortfolioModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📥 Import Portfolio</h2>
+                <button class="close-btn" onclick="closeImportPortfolioModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-info-box">
+                    <div class="import-info-title">📋 CSV Format Requirements</div>
+                    <ul class="import-format-list">
+                        <li><strong>Header:</strong> <code>EXCHANGE,SYMBOL,NAME,QUANTITY,PRICE,TIMESTAMP</code></li>
+                        <li><strong>EXCHANGE:</strong> Must be either <code>NSE</code> or <code>BSE</code></li>
+                        <li><strong>SYMBOL:</strong> Stock ticker symbol (e.g., RELIANCE.NS, TCS.BO)</li>
+                        <li><strong>NAME:</strong> Company name (use quotes if contains commas)</li>
+                        <li><strong>QUANTITY:</strong> Number of shares (positive integer)</li>
+                        <li><strong>PRICE:</strong> Purchase price per share (positive decimal)</li>
+                        <li><strong>TIMESTAMP:</strong> ISO format (e.g., 2026-02-04T10:30:00)</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <span class="warning-icon">⚠️</span>
+                    <div>
+                        <strong>Important:</strong> The CSV file must have exactly these columns in this order. 
+                        Any format mismatch will result in an error. Existing portfolio entries will be updated 
+                        (quantities added, prices averaged).
+                    </div>
+                </div>
+
+                <div class="file-input-wrapper">
+                    <label for="portfolioFileInput" class="file-input-label" id="fileInputLabel">
+                        <div class="file-icon">📄</div>
+                        <div class="file-input-text" id="fileInputText">
+                            Click to select CSV file or drag and drop here
+                        </div>
+                    </label>
+                    <input type="file" 
+                           id="portfolioFileInput" 
+                           class="file-input" 
+                           accept=".csv"
+                           onchange="handleFileSelect(this)">
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="sample-download-btn" onclick="downloadSampleCSV()">
+                        📥 Download Sample CSV Template
+                    </button>
+                </div>
+
+                <div id="importMessage"></div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-cancel" onclick="closeImportPortfolioModal()">Cancel</button>
+                    <button class="btn btn-confirm" 
+                            style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);"
+                            onclick="importPortfolio()">
+                        Import Portfolio
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleFileSelect(input) {
+            const label = document.getElementById('fileInputLabel');
+            const text = document.getElementById('fileInputText');
+            
+            if (input.files && input.files.length > 0) {
+                const fileName = input.files[0].name;
+                text.textContent = `Selected: ${fileName}`;
+                text.classList.add('has-file');
+                label.classList.add('has-file');
+            } else {
+                text.textContent = 'Click to select CSV file or drag and drop here';
+                text.classList.remove('has-file');
+                label.classList.remove('has-file');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,8 +1,59 @@
-// Add to existing app.js - News functionality
+function initMobileMenu() {
+    const mobileBtn = document.createElement('button');
+    mobileBtn.className = 'mobile-menu-btn';
+    mobileBtn.innerHTML = '☰';
+    mobileBtn.onclick = toggleMobileMenu;
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'mobile-overlay';
+    overlay.onclick = closeMobileMenu;
+    
+    document.body.insertBefore(mobileBtn, document.body.firstChild);
+    document.body.insertBefore(overlay, document.body.firstChild);
+    
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', closeMobileMenu);
+    });
+}
 
-/**
- * Load and display news and announcements
- */
+function toggleMobileMenu() {
+    const nav = document.querySelector('.vertical-nav');
+    const overlay = document.querySelector('.mobile-overlay');
+    const btn = document.querySelector('.mobile-menu-btn');
+    
+    nav.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+    
+    if (nav.classList.contains('mobile-open')) {
+        btn.innerHTML = '✕';
+    } else {
+        btn.innerHTML = '☰';
+    }
+}
+
+function closeMobileMenu() {
+    const nav = document.querySelector('.vertical-nav');
+    const overlay = document.querySelector('.mobile-overlay');
+    const btn = document.querySelector('.mobile-menu-btn');
+    
+    nav.classList.remove('mobile-open');
+    overlay.classList.remove('active');
+    btn.innerHTML = '☰';
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileMenu);
+} else {
+    initMobileMenu();
+}
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 480) {
+        closeMobileMenu();
+    }
+});
+
 async function loadNews() {
     const container = document.getElementById('newsContainer');
     container.innerHTML = '<div class="loading">Loading latest news and announcements...</div>';
@@ -14,7 +65,6 @@ async function loadNews() {
         const data = await response.json();
         console.log('News API Response:', data);
         
-        // Handle different response structures
         const newsArticles = data.news || data.articles || [];
         
         if (!newsArticles || newsArticles.length === 0) {
@@ -40,14 +90,10 @@ async function loadNews() {
     }
 }
 
-/**
- * Display news articles in grid format
- */
 function displayNews(articles) {
     const container = document.getElementById('newsContainer');
     
     const newsHTML = articles.map(article => {
-        // Parse published date
         let publishedDate = 'Recently';
         try {
             if (article.published_at || article.publishedAt) {
@@ -58,13 +104,9 @@ function displayNews(articles) {
             console.error('Error parsing date:', e);
         }
         
-        // Get source
         const source = article.source || article.source_name || 'Market News';
-        
-        // Get URL
         const url = article.url || article.link || '#';
         
-        // Truncate description if too long
         let description = article.description || article.content || 'No description available';
         if (description.length > 200) {
             description = description.substring(0, 200) + '...';
@@ -96,9 +138,6 @@ function displayNews(articles) {
     container.innerHTML = `<div class="news-grid">${newsHTML}</div>`;
 }
 
-/**
- * Format news date in a user-friendly way
- */
 function formatNewsDate(date) {
     const now = new Date();
     const diffMs = now - date;
@@ -123,21 +162,19 @@ function formatNewsDate(date) {
     }
 }
 
-/**
- * Update switchTab function to handle news tab
- */
-const originalSwitchTab = switchTab;
-switchTab = function(tab) {
-    originalSwitchTab(tab);
-    
-    if (tab === 'news') {
-        loadNews();
-    }
-};
+if (typeof switchTab !== 'undefined') {
+    const originalSwitchTab = switchTab;
+    switchTab = function(tab) {
+        originalSwitchTab(tab);
+        
+        if (tab === 'news') {
+            loadNews();
+        }
+    };
+}
 
-// Auto-refresh news every 5 minutes
 setInterval(() => {
-    if (currentTab === 'news') {
+    if (typeof currentTab !== 'undefined' && currentTab === 'news') {
         loadNews();
     }
 }, 300000);
