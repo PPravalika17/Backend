@@ -6,18 +6,51 @@
     <title>Stock Market Trading Platform</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-     
-
     
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="news-styles.css">
     <link rel="stylesheet" href="responsive-mobile.css">
+    <link rel="stylesheet" href="video-intro.css">
+    <link rel="stylesheet" href="chat-modal-fix.css">
 </head>
-<body>
+<body class="intro-playing">
+    
+    <!-- VIDEO INTRO OVERLAY -->
+    <div id="videoIntroOverlay" class="video-intro-overlay">
+        <div class="video-intro-container">
+            <!-- Video Element - Replace src with your actual video file path -->
+            <video 
+                id="introVideo" 
+                class="intro-video" 
+                preload="auto"
+                playsinline
+                muted
+            >
+                <!-- Add your video source here. Example: -->
+                <source src="intro-video.mp4" type="video/mp4">
+                <source src="intro-video.webm" type="video/webm">
+                Your browser does not support the video tag.
+            </video>
+            
+            <!-- Loading Indicator -->
+            <div id="videoLoading" class="video-loading">
+                <div class="spinner"></div>
+                <div>Loading...</div>
+            </div>
+            
+            <!-- Skip Button -->
+            <button id="skipIntroBtn" class="skip-intro-btn">
+                Skip Intro →
+            </button>
+        </div>
+    </div>
+    <!-- END VIDEO INTRO -->
+
     <!-- Vertical Navigation -->
     <nav class="vertical-nav">
         <div class="nav-header">
-            <h1> StockPro</h1>
+            <h1>StockPro</h1>
             <p>Trading Platform</p>
         </div>
 
@@ -34,11 +67,10 @@
                 <span class="nav-item-icon"></span>
                 <span>Trade History</span>
             </div>
-<div class="nav-items">
-<div class="nav-item" onclick="switchTab('news')">
-    
-       <span>News & Announcements</span>
-   </div>
+            <div class="nav-item" onclick="switchTab('news')">
+                <span class="nav-item-icon"></span>
+                <span>News & Announcements</span>
+            </div>
             <a href="dashboard.html" class="nav-item">
                 <span class="nav-item-icon"></span>
                 <span>Dashboard</span>
@@ -58,7 +90,7 @@
         <!-- Trending Tab -->
         <div id="trendingTab" class="tab-content active">
             <div class="content-header">
-                <h1> Trending Stocks</h1>
+                <h1>Trending Stocks</h1>
                 <p>Live market data from Indian stock exchanges</p>
             </div>
 
@@ -77,11 +109,9 @@
         <!-- Portfolio Tab -->
         <div id="portfolioTab" class="tab-content">
             <div class="content-header">
-                <h1>My Portfolio</h1>
+                <h1>💼 My Portfolio</h1>
                 <p>Your stock holdings and performance</p>
             </div>
-
-            
 
             <div class="portfolio-actions">
                 <button class="action-btn btn-export" onclick="exportPortfolio()">
@@ -100,7 +130,7 @@
         <!-- Trade History Tab -->
         <div id="historyTab" class="tab-content">
             <div class="content-header">
-                <h1> Trade History</h1>
+                <h1>Trade History</h1>
                 <p>Your complete trading activity</p>
             </div>
 
@@ -114,20 +144,20 @@
                 <div class="loading">Loading trade history...</div>
             </div>
         </div>
-         <!-- News & Announcements Tab -->
-        <div id="newsTab" class="tab-content" style="justify-content: center; ">
+        
+        <!-- News & Announcements Tab -->
+        <div id="newsTab" class="tab-content">
             <div class="content-header">
                 <h1>News & Announcements</h1>
                 <p>Latest market news and updates from Indian stock markets</p>
             </div>
 
-            <div id="newsContainer" style="justify-content: center;">
+            <div id="newsContainer">
                 <div class="loading">Loading latest news...</div>
             </div>
         </div>
     </div>
 
-       
     <!-- Floating Action Buttons -->
     <div class="fab-container">
         <button class="fab fab-add hide" id="fabAdd" onclick="openAddHoldingModal()" title="Add Holding">+</button>
@@ -288,11 +318,8 @@
         <span class="toast-message" id="toastMessage"></span>
     </div>
 
-    <script src="app.js"></script>
-    <script src="responsive-mobile.js"></script>
-    <script src="app-news-addon.js"></script>
     <!-- AI Chat Modal -->
-    <div id="chatModal">
+    <div id="chatModal" class="chat-modal">
         <div class="chat-header">
             <h2>AI Portfolio Advisor</h2>
             <button class="chat-close-btn" onclick="toggleChat()">&times;</button>
@@ -323,12 +350,12 @@
     <div id="importPortfolioModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title"> Import Portfolio</h2>
+                <h2 class="modal-title">Import Portfolio</h2>
                 <button class="close-btn" onclick="closeImportPortfolioModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="import-info-box">
-                    <div class="import-info-title"> CSV Format Requirements</div>
+                    <div class="import-info-title">ℹ️ CSV Format Requirements</div>
                     <ul class="import-format-list">
                         <li><strong>Header:</strong> <code>EXCHANGE,SYMBOL,NAME,QUANTITY,PRICE,TIMESTAMP</code></li>
                         <li><strong>EXCHANGE:</strong> Must be either <code>NSE</code> or <code>BSE</code></li>
@@ -365,7 +392,7 @@
 
                 <div style="text-align: center;">
                     <button class="sample-download-btn" onclick="downloadSampleCSV()">
-                         Download Sample CSV Template
+                        📄 Download Sample CSV Template
                     </button>
                 </div>
 
@@ -401,86 +428,10 @@
         }
     </script>
 
-    <!-- Import Portfolio Modal -->
-    <div id="importPortfolioModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title"> Import Portfolio</h2>
-                <button class="close-btn" onclick="closeImportPortfolioModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="import-info-box">
-                    <div class="import-info-title"> CSV Format Requirements</div>
-                    <ul class="import-format-list">
-                        <li><strong>Header:</strong> <code>EXCHANGE,SYMBOL,NAME,QUANTITY,PRICE,TIMESTAMP</code></li>
-                        <li><strong>EXCHANGE:</strong> Must be either <code>NSE</code> or <code>BSE</code></li>
-                        <li><strong>SYMBOL:</strong> Stock ticker symbol (e.g., RELIANCE.NS, TCS.BO)</li>
-                        <li><strong>NAME:</strong> Company name (use quotes if contains commas)</li>
-                        <li><strong>QUANTITY:</strong> Number of shares (positive integer)</li>
-                        <li><strong>PRICE:</strong> Purchase price per share (positive decimal)</li>
-                        <li><strong>TIMESTAMP:</strong> ISO format (e.g., 2026-02-04T10:30:00)</li>
-                    </ul>
-                </div>
-
-                <div class="warning-box">
-                    <span class="warning-icon"></span>
-                    <div>
-                        <strong>Important:</strong> The CSV file must have exactly these columns in this order. 
-                        Any format mismatch will result in an error. Existing portfolio entries will be updated 
-                        (quantities added, prices averaged).
-                    </div>
-                </div>
-
-                <div class="file-input-wrapper">
-                    <label for="portfolioFileInput" class="file-input-label" id="fileInputLabel">
-                        <div class="file-icon"></div>
-                        <div class="file-input-text" id="fileInputText">
-                            Click to select CSV file or drag and drop here
-                        </div>
-                    </label>
-                    <input type="file" 
-                           id="portfolioFileInput" 
-                           class="file-input" 
-                           accept=".csv"
-                           onchange="handleFileSelect(this)">
-                </div>
-
-                <div style="text-align: center;">
-                    <button class="sample-download-btn" onclick="downloadSampleCSV()">
-                         Download Sample CSV Template
-                    </button>
-                </div>
-
-                <div id="importMessage"></div>
-
-                <div class="modal-actions">
-                    <button class="btn btn-cancel" onclick="closeImportPortfolioModal()">Cancel</button>
-                    <button class="btn btn-confirm" 
-                            style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);"
-                            onclick="importPortfolio()">
-                        Import Portfolio
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function handleFileSelect(input) {
-            const label = document.getElementById('fileInputLabel');
-            const text = document.getElementById('fileInputText');
-            
-            if (input.files && input.files.length > 0) {
-                const fileName = input.files[0].name;
-                text.textContent = `Selected: ${fileName}`;
-                text.classList.add('has-file');
-                label.classList.add('has-file');
-            } else {
-                text.textContent = 'Click to select CSV file or drag and drop here';
-                text.classList.remove('has-file');
-                label.classList.remove('has-file');
-            }
-        }
-    </script>
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script src="responsive-mobile.js"></script>
+    <script src="app-news-addon.js"></script>
+    <script src="video-intro.js"></script>
 </body>
 </html>
