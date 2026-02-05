@@ -64,8 +64,35 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Test Statistics:**" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          grep -h "tests=" target/surefire-reports/TEST-*.xml | head -1 || echo "Test count unavailable"
+          
+          # Extract and display test statistics from Maven output
+          total_tests=$(grep -oP 'Tests run: \K\d+' target/surefire-reports/*.txt 2>/dev/null | awk '{s+=$1} END {print s}' || echo "0")
+          total_failures=$(grep -oP 'Failures: \K\d+' target/surefire-reports/*.txt 2>/dev/null | awk '{s+=$1} END {print s}' || echo "0")
+          total_errors=$(grep -oP 'Errors: \K\d+' target/surefire-reports/*.txt 2>/dev/null | awk '{s+=$1} END {print s}' || echo "0")
+          total_skipped=$(grep -oP 'Skipped: \K\d+' target/surefire-reports/*.txt 2>/dev/null | awk '{s+=$1} END {print s}' || echo "0")
+          
+          echo "Tests run: $total_tests" >> $GITHUB_STEP_SUMMARY
+          echo "Failures: $total_failures" >> $GITHUB_STEP_SUMMARY
+          echo "Errors: $total_errors" >> $GITHUB_STEP_SUMMARY
+          echo "Skipped: $total_skipped" >> $GITHUB_STEP_SUMMARY
+          
+          # Calculate success rate
+          if [ "$total_tests" -gt 0 ]; then
+            passed=$((total_tests - total_failures - total_errors))
+            success_rate=$((passed * 100 / total_tests))
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Success Rate: ${success_rate}%" >> $GITHUB_STEP_SUMMARY
+          fi
+          
           echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # List all test classes
+          echo "**Test Classes:**" >> $GITHUB_STEP_SUMMARY
+          for file in target/surefire-reports/TEST-*.xml; do
+            classname=$(grep -oP 'testsuite.*name="\K[^"]+' "$file" | head -1)
+            echo "- $classname" >> $GITHUB_STEP_SUMMARY
+          done
         else
           echo "❌ Test execution failed" >> $GITHUB_STEP_SUMMARY
         fi
